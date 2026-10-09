@@ -8,7 +8,7 @@
   #define InstallIdentity "{D652136C-E4B4-4194-98F7-7264ABAF317E}"
 #endif
 #ifndef AppVersion
-  #define AppVersion "0.5.0"
+  #define AppVersion "0.6.0"
 #endif
 
 [Setup]

@@ -34,7 +34,7 @@ public static class DocumentRenderer
     /// identical to the same piece of a whole-canvas render.
     /// </para>
     /// </summary>
-    public static SKBitmap RenderRegion(CanvasDocument document, SKRectI region)
+    public static SKBitmap RenderRegion(CanvasDocument document, SKRectI region, LayerRenderCache? layerCache = null)
     {
         var result = Allocate(region.Width, region.Height);
         if (region.Width <= 0 || region.Height <= 0) return result;
@@ -42,8 +42,13 @@ public static class DocumentRenderer
         var wanted = SKRectI.Intersect(region, canvas);
         if (wanted.Width <= 0 || wanted.Height <= 0) return result;
         var grown = SKRectI.Intersect(Inflate(wanted, Halo(document)), canvas);
+        if (grown == region)
+        {
+            new Renderer(document, result, region, layerCache).Draw();
+            return result;
+        }
         using var bitmap = Allocate(grown.Width, grown.Height);
-        new Renderer(document, bitmap, grown).Draw();
+        new Renderer(document, bitmap, grown, layerCache).Draw();
         using var surface = new SKCanvas(result);
         using var paint = new SKPaint { BlendMode = SKBlendMode.Src };
         // The grown render's inner rectangle, into the piece's own corner.
@@ -149,14 +154,16 @@ public static class DocumentRenderer
         private readonly CanvasDocument _document;
         private readonly SKBitmap _canvas;
         private readonly SKRectI _region;
+        private readonly LayerRenderCache? _cache;
         private readonly Dictionary<Guid, ImageLayer> _byID = [];
         private readonly Dictionary<Guid, List<ImageLayer>> _children = [];
 
-        public Renderer(CanvasDocument document, SKBitmap canvas, SKRectI region)
+        public Renderer(CanvasDocument document, SKBitmap canvas, SKRectI region, LayerRenderCache? cache)
         {
             _document = document;
             _canvas = canvas;
             _region = region;
+            _cache = cache;
             foreach (var layer in document.Layers)
             {
                 _byID[layer.ID] = layer;
@@ -222,7 +229,7 @@ public static class DocumentRenderer
             if (opacity <= 0) return;
             var content = Content(layer, out var bounds);
             if (content is null) return;
-            using (content) Composite(target, content, bounds, layer.BlendMode, opacity);
+            using (content) Composite(target, content, bounds, layer.BlendMode, opacity, layer.ID);
         }
 
         /// <summary>
@@ -362,6 +369,17 @@ public static class DocumentRenderer
         /// drawn around what is left, so its own mask must not be applied to the result a second time.
         /// </summary>
         private SKBitmap? Content(ImageLayer layer, out SKRectI bounds)
+        {
+            if (_cache is null || layer.Asset is null) return MakeContent(layer, out bounds);
+            var masks = Masks(layer, includeOwn: true).Select(mask => new LayerRenderCache.MaskInput(mask.Image, mask.Transform)).ToArray();
+            var key = new LayerRenderCache.Input(layer.Asset.Image, layer.Transform, layer.Effects, _region, masks);
+            if (_cache.TryGet(layer.ID, key, out var cached, out bounds)) return cached;
+            var content = MakeContent(layer, out bounds);
+            if (content is not null) _cache.Store(layer.ID, key, content, bounds);
+            return content;
+        }
+
+        private SKBitmap? MakeContent(ImageLayer layer, out SKRectI bounds)
         {
             bounds = Clip(Bounds(layer.Transform));
             if (layer.Asset is not { } asset || bounds.Width <= 0 || bounds.Height <= 0) return null;
@@ -557,9 +575,14 @@ public static class DocumentRenderer
         }
 
         /// <summary>Places a rendered layer on the target: Skia draws the sixteen modes it has, the rest are done by hand.</summary>
-        private static void Composite(Target target, SKBitmap content, SKRectI bounds, LayerBlendMode mode, double opacity)
+        private void Composite(Target target, SKBitmap content, SKRectI bounds, LayerBlendMode mode, double opacity, Guid? cacheID = null)
         {
-            if (opacity < 1) ScaleChannels(content, opacity);
+            if (opacity < 1)
+            {
+                var scaled = cacheID is { } id ? _cache?.Scaled(id, opacity, ScaleChannels) : null;
+                if (scaled is not null) content = scaled;
+                else ScaleChannels(content, opacity);
+            }
             var composite = BlendModes.From(mode);
             if (BlendModes.Skia(composite) is { } native)
             {
@@ -590,10 +613,13 @@ public static class DocumentRenderer
         private static void ScaleChannels(SKBitmap bitmap, double opacity)
         {
             var scale = (float)opacity;
+            Span<byte> values = stackalloc byte[256];
+            for (var value = 0; value < values.Length; value++)
+                values[value] = (byte)MathF.Round(value * scale, MidpointRounding.AwayFromZero);
             var pixels = bitmap.GetPixelSpan();
             for (var index = 0; index < pixels.Length; index++)
             {
-                pixels[index] = (byte)MathF.Round(pixels[index] * scale, MidpointRounding.AwayFromZero);
+                pixels[index] = values[pixels[index]];
             }
         }
 

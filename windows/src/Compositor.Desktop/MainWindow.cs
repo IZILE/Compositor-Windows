@@ -323,6 +323,8 @@ public sealed partial class MainWindow : Window
         AddHandler(DragDrop.DropEvent, DropFiles);
         Closed += (_, _) =>
         {
+            _previewClosed = true;
+            StopPreview();
             _picker?.Close();
             _watchTimer?.Stop();
             _previewTimer?.Stop();
@@ -1470,7 +1472,7 @@ public sealed partial class MainWindow : Window
         var was = target.Asset!.Image.GetPixel(0, 0);
         panel.Move("Exposure, stops", 1.5);
         panel.Move("Contrast", 40);
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         if (_preview is null) throw new InvalidOperationException("moving an amount did not start a preview");
         if (_history.IsModified) throw new InvalidOperationException("the preview wrote into the document's history");
         if (target.Asset.Image.GetPixel(0, 0) != was)
@@ -1540,7 +1542,7 @@ public sealed partial class MainWindow : Window
             throw new InvalidOperationException("the line did not ask for its own angle back");
         }
         // The grade is asked for again, and what comes back is the picture with the line's turn in it.
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         report.Add($"upright: 1 line drawn, asking for a turn of {GuidedUpright.Corrections(asked.Guides).Rotate:0.##} degrees");
 
         // A second, steeper line adds the keystone; a third is not read at all.
@@ -1551,7 +1553,7 @@ public sealed partial class MainWindow : Window
         {
             throw new InvalidOperationException($"the steep second line asked for {two.Vertical}/{two.Horizontal}");
         }
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         report.Add($"upright: a steeper second line asks for a keystone of {two.Vertical:0}");
 
         // Stopping, and clearing, put the canvas and the picture back.
@@ -1566,7 +1568,7 @@ public sealed partial class MainWindow : Window
             throw new InvalidOperationException("clearing left lines behind");
         }
         if (panel.Current().Geometry.Adjusts) throw new InvalidOperationException("the cleared lines still adjust");
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         report.Add("upright: stopping and clearing put the canvas and the picture back");
 
         // Apply writes them into the layer as one undo step, and puts the panel away with the Layers panel back.
@@ -1598,7 +1600,7 @@ public sealed partial class MainWindow : Window
         report.Add($"opened again where it was left: exposure {again.SetTo("Exposure, stops")}, "
             + $"contrast {again.SetTo("Contrast")}");
         again.Move("Exposure, stops", -1);
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         again.Cancel();
         if (_cameraRaw is not null) throw new InvalidOperationException("Cancel did not put the panel away");
         if (target.Asset.Image.GetPixel(0, 0) != applied)
@@ -1621,7 +1623,7 @@ public sealed partial class MainWindow : Window
         shown.Move("Clarity", 30);
         shown.PressDrawGuides();
         _canvas.UprightDrawn!(box.Point(0.1, 0.75), box.Point(0.9, 0.75 - 0.8 * Math.Tan(8 * Math.PI / 180)));
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         report.Add("left open with exposure 0.8, clarity 30 and one upright line, for the drawing");
         return string.Join(Environment.NewLine, report);
     }
@@ -1901,7 +1903,7 @@ public sealed partial class MainWindow : Window
         StartPreview(document, target.ID);
         RequestPreview((preview, layer) => FilterEdits.Apply(preview, layer, FilterKind.GaussianBlur,
             new FilterSettings { BlurRadius = 8 }));
-        ShowPreviewOnce(null, EventArgs.Empty);
+        FlushPreviewForCheck();
         var previewing = _canvas.PreviewDocument is not null;
         HidePreview();
         var hidden = _canvas.PreviewDocument is null;
@@ -3926,12 +3928,13 @@ public sealed partial class MainWindow : Window
     {
         if (_document is not { } document || _cameraRawLayer is not { } id) return;
         if (_cameraRaw?.PreviewEnabled == false) { HidePreview(); return; }
+        CameraRawScope? measured = null;
         RequestPreview(document =>
         {
             var shown = CameraRawEdits.Preview(document, id, settings, shadows, highlights, mask, out var scope);
-            _cameraRawScope = scope;
+            measured = scope;
             return shown;
-        });
+        }, () => _cameraRawScope = measured);
     }
 
     /// <summary>
@@ -4331,6 +4334,7 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void DistortChanged(IReadOnlyList<SKPoint> corners)
     {
+        corners = corners.ToArray();
         if (_distortLayers is { Count: > 1 } ids && _distortBox is { } box)
         {
             RequestPreview(document => DistortEdits.Distort(document, ids, box, corners));
@@ -4747,14 +4751,14 @@ public sealed partial class MainWindow : Window
     {
         FinishNumberTransform(); ApplyPersistentTransform();
         if (preview is null) return;
+        StopPreview();
         _preview = preview;
         _previewLayer = layerID;
         _canvas.PreviewDocument = preview.Document;
     }
 
     /// <summary>
-    /// An amount has moved: the edit is remembered and runs once the amounts have been still for a moment,
-    /// rather than on every tick of a drag.
+    /// An amount has moved: keep the newest edit and run at most one background preview at a time.
     /// </summary>
     /// <summary>
     /// What the shape tool would make of a drag from <paramref name="box"/> outward: the style it will be
@@ -4788,30 +4792,24 @@ public sealed partial class MainWindow : Window
         RequestPreview(document => apply(document, layer));
     }
 
-    private void RequestPreview(Func<CanvasDocument, bool> apply)
+    private void RequestPreview(Func<CanvasDocument, bool> apply, Action? displayed = null)
     {
         if (_preview is null) return;
         _previewApply = apply;
-        _previewTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(140) };
-        _previewTimer.Stop();
+        _previewDisplayed = displayed;
+        _previewRevision++; _previewQueued = true;
+        _previewTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _previewTimer.Tick -= ShowPreviewOnce;
         _previewTimer.Tick += ShowPreviewOnce;
-        _previewTimer.Start();
+        if (!_previewTimer.IsEnabled) _previewTimer.Start();
     }
 
-    /// <summary>Runs the edit on the preview once the amounts have settled, and draws it.</summary>
+    /// <summary>Starts the newest queued preview without waiting on the UI thread.</summary>
     private void ShowPreviewOnce(object? sender, EventArgs e)
     {
         _previewTimer?.Stop();
         if (_cameraRaw?.PreviewEnabled == false) return;
-        if (_preview is not { } preview || _previewApply is not { } apply) return;
-        if (!preview.Show(apply)) return;
-        // The canvas is put back on the preview every time it is shown: the panel's Preview tick may have been
-        // off, which takes the canvas back to the document as it stands.
-        _canvas.PreviewDocument = preview.Document;
-        // The panel's scope describes the picture the canvas has just been given, so the two are shown together.
-        if (_cameraRaw is { } panel) panel.ShowScope(_cameraRawScope);
-        _canvas.InvalidateVisual();
+        StartPreviewJob();
     }
 
     /// <summary>
@@ -4826,6 +4824,7 @@ public sealed partial class MainWindow : Window
     private void HidePreview()
     {
         _previewTimer?.Stop();
+        _previewRevision++; _previewQueued = false;
         if (_preview is null) return;
         _canvas.PreviewDocument = null;
         _canvas.InvalidateVisual();
@@ -4837,8 +4836,7 @@ public sealed partial class MainWindow : Window
         _previewApply = null;
         _previewLayer = null;
         _canvas.PreviewDocument = null;
-        _preview?.Dispose();
-        _preview = null;
+        DisposePreviewJobSession();
         _canvas.InvalidateVisual();
     }
 

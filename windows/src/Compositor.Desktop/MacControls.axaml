@@ -89,18 +89,25 @@
   </ControlTheme>
   <ControlTheme x:Key="MacMenuItemTheme" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
     <Setter Property="CornerRadius" Value="5" /><Setter Property="Padding" Value="8,3" /><Setter Property="Margin" Value="3,1" />
+    <Setter Property="ItemsPanel"><ItemsPanelTemplate><local:MenuSelectionPanel /></ItemsPanelTemplate></Setter>
     <Style Selector="^ /template/ Border#PART_LayoutRoot">
       <Setter Property="Transitions"><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Setter>
     </Style>
     <Style Selector="^:selected /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="#2979F5" /></Style>
+    <Style Selector="^.moving-menu /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="Transparent" /></Style>
+    <Style Selector="^.moving-menu:selected /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="Transparent" /></Style>
   </ControlTheme>
   <ControlTheme x:Key="MacMenuBarTheme" TargetType="MenuItem" BasedOn="{StaticResource FluentTopLevelMenuItem}">
     <Setter Property="CornerRadius" Value="6" /><Setter Property="Padding" Value="10,3" /><Setter Property="Margin" Value="2,3" />
+    <Setter Property="ItemsPanel"><ItemsPanelTemplate><local:MenuSelectionPanel /></ItemsPanelTemplate></Setter>
     <Style Selector="^ /template/ Border#PART_LayoutRoot">
       <Setter Property="Transitions"><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Setter>
     </Style>
     <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="#1CFFFFFF" /></Style>
     <Style Selector="^:selected /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="#2BFFFFFF" /></Style>
+    <Style Selector="^.moving-menu /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="Transparent" /></Style>
+    <Style Selector="^.moving-menu:pointerover /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="Transparent" /></Style>
+    <Style Selector="^.moving-menu:selected /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="Transparent" /></Style>
   </ControlTheme>
   <ControlTheme x:Key="MacChoiceItemTheme" TargetType="ComboBoxItem">
     <Setter Property="Padding" Value="8,3" /><Setter Property="MinHeight" Value="24" />
@@ -272,6 +279,8 @@
   <Style Selector="MenuItem"><Setter Property="Theme" Value="{StaticResource MacMenuItemTheme}" /></Style>
   <Style Selector="Menu &gt; MenuItem"><Setter Property="Theme" Value="{StaticResource MacMenuBarTheme}" /></Style>
   <Style Selector="Menu"><Setter Property="ItemContainerTheme" Value="{StaticResource MacMenuBarTheme}" /></Style>
+  <Style Selector="Menu"><Setter Property="ItemsPanel"><ItemsPanelTemplate><local:MenuSelectionPanel Orientation="Horizontal" /></ItemsPanelTemplate></Setter></Style>
+  <Style Selector="ContextMenu"><Setter Property="ItemsPanel"><ItemsPanelTemplate><local:MenuSelectionPanel /></ItemsPanelTemplate></Setter></Style>
   <Style Selector="ScrollBar"><Setter Property="Theme" Value="{StaticResource MacScrollBarTheme}" /></Style>
   <Style Selector="Popup"><Setter Property="local:PopupMotion.Enabled" Value="True" /></Style>
   <Style Selector="ToolTip"><Setter Property="CornerRadius" Value="7" /><Setter Property="Padding" Value="9,5" /><Setter Property="Background" Value="#EF292929" /><Setter Property="BorderBrush" Value="#35FFFFFF" /></Style>

@@ -443,9 +443,11 @@ public sealed partial class CanvasView : Control
         get => _document;
         set
         {
+            if (!ReferenceEquals(_document, value)) _rasterCache.Clear();
             _document = value;
             _brushPointer = null; UpdateBrushCursor();
             Fit();
+            InvalidateVisual();
         }
     }
 
@@ -593,9 +595,8 @@ public sealed partial class CanvasView : Control
             SKRectI.Create(0, 0, document.Width, document.Height));
         if (region.Width <= 0 || region.Height <= 0) return;
 
-        using var rendered = MaskAloneLayerID is { } maskID && document.Layers.FirstOrDefault(layer => layer.ID == maskID) is { Mask: not null } maskLayer
-            ? MaskPreview.RenderRegion(maskLayer, region) : DocumentRenderer.RenderRegion(document, region);
-        using var image = ToImage(rendered);
+        var image = _rasterCache.Get(document, region, MaskAloneLayerID);
+        var cached = _rasterCache.Region;
         var destination = new Rect(
             (region.Left - _origin.X) * _zoom,
             (region.Top - _origin.Y) * _zoom,
@@ -604,7 +605,7 @@ public sealed partial class CanvasView : Control
         DrawPaperShadow(context, destination);
         // The checkerboard under the picture, so transparent pixels show through it as they do on the Mac.
         context.DrawRectangle(Paper, null, destination);
-        context.DrawImage(image, destination);
+        context.DrawImage(image, new Rect(region.Left - cached.Left, region.Top - cached.Top, region.Width, region.Height), destination);
         context.DrawRectangle(null, Skin.PictureEdgePen, destination);
         DrawGrid(context, document);
         DrawPixelGrid(context, document);
@@ -1242,23 +1243,9 @@ public sealed partial class CanvasView : Control
             PixelFormat.Bgra8888, AlphaFormat.Premul);
         using (var locked = target.Lock())
         {
-            var pixels = source.GetPixelSpan();
-            unsafe
-            {
-                var start = (byte*)locked.Address;
-                for (var y = 0; y < source.Height; y++)
-                {
-                    var from = pixels.Slice(y * source.Width * 4, source.Width * 4);
-                    var to = new Span<byte>(start + y * locked.RowBytes, source.Width * 4);
-                    for (var x = 0; x < source.Width; x++)
-                    {
-                        to[x * 4] = from[x * 4 + 2];
-                        to[x * 4 + 1] = from[x * 4 + 1];
-                        to[x * 4 + 2] = from[x * 4];
-                        to[x * 4 + 3] = from[x * 4 + 3];
-                    }
-                }
-            }
+            using var pixels = source.PeekPixels();
+            if (!pixels.ReadPixels(new SKImageInfo(source.Width, source.Height, SKColorType.Bgra8888, SKAlphaType.Premul),
+                locked.Address, locked.RowBytes)) throw new InvalidOperationException("Could not copy canvas pixels.");
         }
         return target;
     }

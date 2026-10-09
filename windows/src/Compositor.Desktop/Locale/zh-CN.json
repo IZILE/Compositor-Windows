@@ -594,5 +594,8 @@
   "Adjustment · Double-click to edit": "调整 · 双击编辑",
   "Ungroup Layers": "取消分组",
   "Select Mask's Black Areas": "选择蒙版黑色区域",
-  "Add layer mask (Alt-click for a black mask)": "添加蒙版（Alt 单击添加黑色蒙版）"
+  "Add layer mask (Alt-click for a black mask)": "添加蒙版（Alt 单击添加黑色蒙版）",
+  "Could not preview that edit: {0}": "无法预览此操作：{0}",
+  "Off": "关闭",
+  "Guided": "引导"
 }

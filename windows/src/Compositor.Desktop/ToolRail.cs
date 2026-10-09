@@ -25,6 +25,9 @@ internal sealed class ToolRail : Grid
     private Button? _back;
     private readonly ScrollViewer _scroll;
     private Tool _marked = Tool.Pan;
+    private SelectionIndicator? _selection;
+    internal TranslateTransform SelectionPosition => _selection!.Position;
+    internal double SelectionDestination { get; private set; }
     private SKColor _foregroundColour = SKColors.Black;
     private SKColor _backgroundColour = SKColors.White;
 
@@ -60,11 +63,8 @@ internal sealed class ToolRail : Grid
         _marked = tool;
         _familyTools[Family(tool)] = tool;
         if (_glyphs.TryGetValue(Family(tool), out var glyph)) { glyph.Kind = tool; glyph.InvalidateVisual(); }
-        foreach (var (which, button) in _buttons)
-        {
-            button.Background = which == Family(tool) ? Skin.TabFront : Brushes.Transparent;
-            button.BorderBrush = which == Family(tool) ? Skin.TabFrontEdge : Brushes.Transparent;
-        }
+        SelectionDestination = Array.IndexOf(RailTools, Family(tool)) * 46;
+        _selection?.MoveTo(new Rect(0, SelectionDestination, 36, 36));
     }
 
     internal void ShowBrushMode(bool erasing)
@@ -119,11 +119,20 @@ internal sealed class ToolRail : Grid
         Tool.Smudge or Tool.Liquify => Tool.Blur, _ => tool,
     };
 
+    private static readonly Tool[] RailTools = [Tool.Move, Tool.Marquee, Tool.Lasso, Tool.Wand, Tool.Crop, Tool.Brush,
+        Tool.Heal, Tool.Clone, Tool.Blur, Tool.Gradient, Tool.Shape, Tool.Type, Tool.Eyedropper, Tool.Pan, Tool.Zoom];
+
     private Control Tools()
     {
         var column = new StackPanel { Orientation = Orientation.Vertical, Spacing = 10 };
-        foreach (var tool in new[] { Tool.Move, Tool.Marquee, Tool.Lasso, Tool.Wand, Tool.Crop, Tool.Brush,
-            Tool.Heal, Tool.Clone, Tool.Blur, Tool.Gradient, Tool.Shape, Tool.Type, Tool.Eyedropper, Tool.Pan, Tool.Zoom })
+        SelectionDestination = Array.IndexOf(RailTools, Family(_marked)) * 46;
+        var track = new Grid();
+        _selection = new SelectionIndicator { Width = 36, Height = 36, HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top, CornerRadius = new CornerRadius(7),
+            Background = Skin.TabFront, BorderBrush = Skin.TabFrontEdge, BorderThickness = new Thickness(1) };
+        _selection.MoveTo(new Rect(0, SelectionDestination, 36, 36));
+        track.Children.Add(_selection);
+        foreach (var tool in RailTools)
         {
             var glyph = new Glyph { Kind = tool };
             _glyphs[tool] = glyph;
@@ -135,7 +144,7 @@ internal sealed class ToolRail : Grid
                 Padding = new Thickness(0),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 VerticalContentAlignment = VerticalAlignment.Stretch,
-                Background = tool == Tool.Pan ? Skin.TabFront : Brushes.Transparent,
+                Background = Brushes.Transparent,
                 BorderThickness = new Thickness(1),
                 BorderBrush = Brushes.Transparent,
                 CornerRadius = new CornerRadius(7),
@@ -171,7 +180,8 @@ internal sealed class ToolRail : Grid
             _buttons[tool] = button;
             column.Children.Add(button);
         }
-        return column;
+        track.Children.Add(column);
+        return track;
     }
 
     /// <summary>

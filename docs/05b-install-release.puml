@@ -1,0 +1,16 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam roundcorner 16
+left to right direction
+rectangle "已完成\n统一控件与文字修复\n核心、界面、动画检查" as ui #DDF2E3
+rectangle "已完成\n安装 / 覆盖 / 卸载\n设置保留、桌面入口与图标" as install #DDF2E3
+rectangle "已完成\n公开源码与 v0.5.0\n三个附件的校验一致" as release #DDF2E3
+rectangle "当前：0.6.0\n响应速度与后台预览\n工具选中连续过渡" as response #FFF0C2
+rectangle "待完成\n云端发布流程实跑\n大图、多 DPI 与 Mac 细节" as pending #ECEFF3
+ui --> install
+install --> release
+release --> response
+response --> pending
+@enduml

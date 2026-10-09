@@ -33,6 +33,15 @@ internal static partial class Program
             return 0;
         }
         if (args is ["--settings-path"]) { Console.WriteLine(UserData.DirectoryPath); return 0; }
+        if (args is ["--performance", var performanceOutput]) return Performance(performanceOutput);
+        if (args is ["--selection-motion", var motionOutput])
+        {
+            System.IO.Directory.CreateDirectory(motionOutput);
+            BuildHeadless().SetupWithoutStarting();
+            var report = new List<string>(); SelectionMotionChecks.Run(report, motionOutput);
+            MenuMotionChecks.Run(report, motionOutput);
+            Console.WriteLine(string.Join(Environment.NewLine, report)); return 0;
+        }
         // Draws the canvas control straight to a PNG, so the interface can be checked without a window.
         // `--grid` turns the layout grid on for the render, which is how that drawing is checked.
         if (args is ["--render", var project, var output]) return Render(project, output, showGrid: false);

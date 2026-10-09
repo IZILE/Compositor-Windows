@@ -14,6 +14,12 @@ internal sealed class ProjectTabs : Panel
 {
     internal sealed record Entry(Guid ID, string Title, bool Dirty, bool Selected, Action Select, Action Close);
     private readonly Dictionary<Guid, Border> _pills = [];
+    private readonly Dictionary<Guid, Border> _backs = [];
+    internal SelectionIndicator Indicator { get; } = new()
+    {
+        CornerRadius = new CornerRadius(14), Background = Skin.TabFront,
+        BorderBrush = Skin.TabFrontEdge, BorderThickness = new Thickness(1), ZIndex = 0,
+    };
     private List<Entry> _entries = [];
     private readonly Button _overflow = new() { Height = 28, CornerRadius = new CornerRadius(14) };
     private List<Entry> _hidden = [];
@@ -32,6 +38,7 @@ internal sealed class ProjectTabs : Panel
     {
         Height = 34;
         ClipToBounds = true;
+        Children.Add(Indicator);
         Children.Add(_overflow);
         _overflow.Click += (_, _) =>
         {
@@ -53,7 +60,9 @@ internal sealed class ProjectTabs : Panel
         foreach (var id in _pills.Keys.Where(id => !_entries.Any(entry => entry.ID == id)).ToList())
         {
             Children.Remove(_pills[id]);
+            Children.Remove(_backs[id]);
             _pills.Remove(id);
+            _backs.Remove(id);
         }
         foreach (var entry in _entries)
         {
@@ -68,11 +77,12 @@ internal sealed class ProjectTabs : Panel
                 Grid.SetColumn(close, 1);
                 pill = new Border { Child = row, Height = 28, CornerRadius = new CornerRadius(14),
                     BorderThickness = new Thickness(1), RenderTransform = new TranslateTransform(),
-                    RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Relative), Tag = entry.ID };
-                pill.Transitions = new Transitions
+                    RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Relative), Tag = entry.ID, ZIndex = 1 };
+                var back = new Border
                 {
-                    new BrushTransition { Property = Border.BackgroundProperty, Duration = TimeSpan.FromMilliseconds(140), Easing = new SplineEasing(0, 0, 0.58, 1) },
-                    new BrushTransition { Property = Border.BorderBrushProperty, Duration = TimeSpan.FromMilliseconds(140), Easing = new SplineEasing(0, 0, 0.58, 1) },
+                    CornerRadius = new CornerRadius(14), Background = Skin.TabBack, BorderBrush = Skin.TabBackEdge,
+                    BorderThickness = new Thickness(1), RenderTransform = pill.RenderTransform, ZIndex = -1,
+                    IsHitTestVisible = false,
                 };
                 var id = entry.ID;
                 name.Click += (_, _) => _entries.FirstOrDefault(value => value.ID == id)?.Select();
@@ -82,6 +92,8 @@ internal sealed class ProjectTabs : Panel
                 pill.AddHandler(PointerReleasedEvent, (_, args) => Release(id, args), Avalonia.Interactivity.RoutingStrategies.Tunnel);
                 pill.PointerCaptureLost += (_, _) => { if (_dragging && _pressed == id) EndDrag(); };
                 _pills.Add(id, pill);
+                _backs.Add(id, back);
+                Children.Add(back);
                 Children.Add(pill);
             }
             var controls = ((Grid)pill.Child!).Children.OfType<Button>().ToArray();
@@ -90,8 +102,6 @@ internal sealed class ProjectTabs : Panel
                 FontWeight = entry.Selected ? FontWeight.SemiBold : FontWeight.Medium };
             ToolTip.SetTip(controls[0], entry.Title);
             ToolTip.SetTip(controls[1], UiText.Format("Close {0}", entry.Title));
-            pill.Background = entry.Selected ? Skin.TabFront : Skin.TabBack;
-            pill.BorderBrush = entry.Selected ? Skin.TabFrontEdge : Skin.TabBackEdge;
         }
         InvalidateMeasure();
     }
@@ -106,6 +116,7 @@ internal sealed class ProjectTabs : Panel
                     weight: entry.Selected ? FontWeight.SemiBold : FontWeight.Medium), 12, Skin.LabelBrush);
             _pills[entry.ID].Width = Math.Clamp(Math.Ceiling(label.Width) + (entry.Dirty ? 10 : 0), 35, 155) + 42;
             _pills[entry.ID].Measure(new Size(double.PositiveInfinity, 28));
+            _backs[entry.ID].Measure(new Size(double.PositiveInfinity, 28));
         }
         return new Size(double.IsFinite(availableSize.Width) ? availableSize.Width : Span(_entries), 34);
     }
@@ -142,7 +153,9 @@ internal sealed class ProjectTabs : Panel
         _overflow.IsVisible = _hidden.Count > 0;
         var x = _hidden.Count > 0 ? OverflowWidth(_hidden.Count) + 6 : 0;
         _overflow.Arrange(new Rect(0, 3, Math.Max(0, x - 6), 28));
-        foreach (var entry in _entries) _pills[entry.ID].IsVisible = visible.Contains(entry);
+        foreach (var entry in _entries)
+            _pills[entry.ID].IsVisible = _backs[entry.ID].IsVisible = visible.Contains(entry);
+        Indicator.IsVisible = visible.Any(entry => entry.Selected);
         if (_dragging && _pressed is { } dragged)
         {
             visible = visible.Where(entry => entry.ID != dragged).ToList();
@@ -154,9 +167,14 @@ internal sealed class ProjectTabs : Panel
             var pill = _pills[entry.ID];
             var width = Math.Min(pill.Width, Math.Max(0, finalSize.Width - x));
             pill.Arrange(new Rect(0, 3, width, 28));
+            _backs[entry.ID].Arrange(new Rect(0, 3, width, 28));
             if (!_dragging || entry.ID != _pressed) ((TranslateTransform)pill.RenderTransform!).X = x;
+            if (entry.Selected)
+                Indicator.MoveTo(new Rect(((TranslateTransform)pill.RenderTransform!).X, 3, width, 28), animate: !_dragging);
             x += width + 6;
         }
+        Indicator.Measure(new Size(double.PositiveInfinity, 28));
+        Indicator.Arrange(new Rect(0, 0, Indicator.Width, 28));
         return finalSize;
     }
 

@@ -8,7 +8,7 @@ $jobs = @(
     @('windows-en','en','--windows-integration',$false), @('windows-zh','zh-CN','--windows-integration',$false),
     @('lifecycle','en','--lifecycle',$false), @('clicks-en','en','--clicks',$false),
     @('clicks-zh','zh-CN','--clicks',$false), @('shortcuts','en','--shortcuts',$false),
-    @('camera-raw','zh-CN','--camera-raw',$false))
+    @('camera-raw','zh-CN','--camera-raw',$false), @('performance','en','--performance',$false))
 $previousData = $env:COMPOSITOR_DATA_DIR
 $previousFastCheck = $env:COMPOSITOR_MAC_QA_ONLY
 $results = @()
@@ -19,7 +19,7 @@ try {
         $folder = Join-Path $OutputDirectory $name
         New-Item -ItemType Directory -Path $folder -Force | Out-Null
         $env:COMPOSITOR_DATA_DIR = Join-Path $folder 'data'
-        $target = if ($directoryOutput) { $folder } else { Join-Path $folder 'window.png' }
+        $target = if ($directoryOutput) { $folder } elseif ($command -eq '--performance') { Join-Path $folder 'performance.json' } else { Join-Path $folder 'window.png' }
         $log = Join-Path $folder 'stdout.log'
         $process = Start-Process -FilePath $Executable -ArgumentList @('--lang',$language,$command,('"'+$target+'"')) -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput $log -RedirectStandardError (Join-Path $folder 'stderr.log')
         if ($process.ExitCode -ne 0) { throw "Published check failed: $name; see $folder" }

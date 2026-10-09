@@ -32,7 +32,7 @@ public sealed partial class MainWindow
         {
             this.MouseMove(new Point(Width / 2, Height - 12), RawInputModifiers.None);
             Layout();
-            if (_cameraRaw is not null) ShowPreviewOnce(null, EventArgs.Empty);
+            if (_cameraRaw is not null) FlushPreviewForCheck();
             using var frame = this.CaptureRenderedFrame() ?? throw new InvalidOperationException("No UI frame.");
             frame.Save(System.IO.Path.Combine(output, name), new PngBitmapEncoderOptions());
         }
@@ -137,12 +137,12 @@ public sealed partial class MainWindow
             field.Focus(); field.Text = "2";
             this.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, "\r"); Layout();
             Check(Math.Abs(exposure.Value - 2) < 0.001, $"{language}: numeric entry updates the preview slider");
-            ShowPreviewOnce(null, EventArgs.Empty);
+            FlushPreviewForCheck();
             Click(Middle(raw.PreviewControl)); Layout();
             Check(!raw.PreviewEnabled && _canvas.PreviewDocument is null, $"{language}: Preview click shows the unmodified document");
-            raw.Move("Exposure, stops", 1); ShowPreviewOnce(null, EventArgs.Empty);
+            raw.Move("Exposure, stops", 1); FlushPreviewForCheck();
             Check(_canvas.PreviewDocument is null, $"{language}: moving amounts keeps a disabled preview off");
-            Click(Middle(raw.PreviewControl)); Layout(); ShowPreviewOnce(null, EventArgs.Empty);
+            Click(Middle(raw.PreviewControl)); Layout(); FlushPreviewForCheck();
             Check(raw.PreviewEnabled && _canvas.PreviewDocument is not null, $"{language}: Preview click restores the edited picture");
             Photograph($"camera-raw-narrow-{language}.png");
             Width = 1180; Height = 780; Layout();

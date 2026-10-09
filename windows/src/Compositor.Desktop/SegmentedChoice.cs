@@ -1,6 +1,4 @@
 using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -11,22 +9,18 @@ namespace Compositor.Desktop;
 internal sealed class SegmentedChoice : Border
 {
     private readonly Button[] _buttons;
-    private readonly Border _selection;
-    private readonly TranslateTransform _offset;
+    private readonly SelectionIndicator _selection;
     private int _selected;
     internal event Action<int>? Changed;
     internal SegmentedChoice(params string[] choices)
     {
+        ArgumentOutOfRangeException.ThrowIfZero(choices.Length);
         CornerRadius = new CornerRadius(12);
         Background = new SolidColorBrush(Color.FromRgb(53, 53, 53));
         BorderBrush = new SolidColorBrush(Colors.White, 0.08); BorderThickness = new Thickness(0.5);
-        _offset = new TranslateTransform { Transitions = new Transitions { new DoubleTransition
-            { Property = TranslateTransform.XProperty, Duration = TimeSpan.FromSeconds(0.14), Easing = new SplineEasing(0, 0, 0.58, 1) } } };
-        _selection = new Border { Height = 22, HorizontalAlignment = HorizontalAlignment.Left,
+        _selection = new SelectionIndicator { Height = 22, HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center, CornerRadius = new CornerRadius(11),
-            Background = new SolidColorBrush(Color.FromRgb(41, 121, 245)), IsHitTestVisible = false,
-            RenderTransform = _offset, Transitions = new Transitions { new DoubleTransition
-                { Property = WidthProperty, Duration = TimeSpan.FromSeconds(0.14), Easing = new SplineEasing(0, 0, 0.58, 1) } } };
+            Background = new SolidColorBrush(Color.FromRgb(41, 121, 245)) };
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
         _buttons = choices.Select((name, index) =>
         {
@@ -51,11 +45,12 @@ internal sealed class SegmentedChoice : Border
         }
     }
     internal Control SelectionHighlight => _selection;
+    internal SelectionIndicator Indicator => _selection;
+    internal int Count => _buttons.Length;
     internal Button ButtonAt(int index) => _buttons[index];
     private void PlaceSelection()
     {
         if (_buttons[_selected].Bounds.Width <= 0) return;
-        _offset.X = _buttons[_selected].Bounds.X;
-        _selection.Width = _buttons[_selected].Bounds.Width;
+        _selection.MoveTo(new Rect(_buttons[_selected].Bounds.X, 0, _buttons[_selected].Bounds.Width, 22));
     }
 }

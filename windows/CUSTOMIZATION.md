@@ -1,4 +1,4 @@
-# Compositor Windows community build 0.5.0
+# Compositor Windows community build 0.6.0
 
 This independent Windows build starts from the C# / Avalonia community port by chenguisen,
 branch `compositor_win`, commit `c51be1e57d699edce857115f43bbca579f18dcd4`.
@@ -9,7 +9,7 @@ The original MIT license and copyright notice remain in the source and portable 
 
 - Replace button, popup, numeric-field and slider appearance with compact Mac-style templates.
   Buttons fade their press feedback over 80 ms; segmented choices move their blue highlight over
-  140 ms. These native-style timings are tuned locally, not measured on a live Mac.
+  160 ms. These native-style timings are tuned locally, not measured on a live Mac.
 - Draw the brush's scaled double-rim cursor in a separate visual so pointer motion does not
   recompose document pixels. Tool variants now retain their selection and update their rail glyph.
 - Reuse layer cells and canvas-relative thumbnails. Selection uses a gray row and a blue border
@@ -134,6 +134,20 @@ clone tool marks the chosen source position; live source-pixel preview remains i
 
 See INSTALLING.md for user instructions and RELEASING.md for the authorized public GitHub release
 process. The workflow builds and checks the published executable before creating a versioned release.
+
+## 0.6.0 responsiveness
+
+0.6.0 adds a bounded canvas raster cache and a 64 MiB layer raster cache. Overlay changes and viewport
+movement within cached bounds reuse pixels. Render inputs include mutable mask flags and placement,
+so edits invalidate the corresponding cache rather than leaving stale pixels. Native pixel conversion
+replaces per-pixel channel swapping; opacity lookup tables retain the original rounding rule.
+The tool rail, project tabs, four tool-mode groups and Camera Raw upright/curve-channel choices share a
+160 ms selection surface that moves and resizes continuously from its displayed state when interrupted.
+The first layout places it directly; repeated layout does not restart the transition. Camera Raw Reset
+restores both the geometry/curve settings and the segmented choices. Filter previews use a single worker,
+independent source pixels, latest-request checks and retained frame lifetimes. UI input does not wait for
+a filter preview. Final filter application, import, saving and very large compositions still contain
+synchronous work. Headless CPU timings are not physical desktop frame-rate measurements.
 
 ## Limits
 

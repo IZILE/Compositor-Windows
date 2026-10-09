@@ -1,0 +1,36 @@
+{
+  "version": "0.6.0",
+  "platform": "Windows x64",
+  "core_tests_passed": 887,
+  "ui_assertions_passed": 2161,
+  "dialog_cases_en_zh": 92,
+  "windows_workflow_checks_each_language": 41,
+  "mouse_checks_each_language": 46,
+  "shortcut_checks": 117,
+  "lifecycle_checks": 26,
+  "installer_first_repeat_upgrade_uninstall": "passed",
+  "published_checks": 10,
+  "selection_motion_ms": 160,
+  "trimmed_build_shipped": false,
+  "settings_preserved": "passed",
+  "old_desktop_portable_removed": true,
+  "native_shortcut_icon_sizes": [
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    128,
+    256
+  ],
+  "icon_center_error_max_pixels": 0.5,
+  "exe_sha256": "485ba47347092350e217f87f25e96869524ac9f16e6abd3e02b94996f246c2b0",
+  "installer_sha256": "c30800702d8bb1ff182f2f936b4404a353ebd1609c4a756e10be682f4c1b4773",
+  "limits": [
+    "No live Mac frame-time comparison",
+    "No multi-DPI physical desktop audit",
+    "No comprehensive large-document performance benchmark"
+  ]
+}

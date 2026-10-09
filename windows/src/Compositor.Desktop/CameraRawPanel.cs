@@ -23,7 +23,7 @@ internal sealed partial class CameraRawPanel
     private readonly ComboBox _glowStyle = new();
     private readonly ComboBox _vignetteStyle = new();
     private readonly ComboBox _geometryProjection = new();
-    private readonly ComboBox _curveChannel = new();
+    private readonly SegmentedChoice _curveChannel = new("RGB", "Red", "Green", "Blue");
     private readonly ListBox _points = new() { Height = 96 };
     private readonly List<CameraRawPointColor> _pointList = [];
     private CameraRawPointColor? _point;
@@ -70,7 +70,10 @@ internal sealed partial class CameraRawPanel
     private CameraRawUprightMode _upright;
     private readonly List<CameraRawGeometryGuide> _guides = [];
     private bool _drawing;
-    private readonly ComboBox _uprightChoice = new() { Width = 160 };
+    private readonly SegmentedChoice _uprightChoice = new("Off", "Guided");
+    internal SegmentedChoice UprightChoice => _uprightChoice;
+    internal SegmentedChoice CurveChannelChoice => _curveChannel;
+    internal int ActiveCurveChannel => _curve?.Channel ?? 0;
     private readonly Button _drawGuides = new() { [!ContentControl.ContentProperty] = UiText.Bind("Draw Guides") };
     private readonly TextBlock _guideNote = new()
     {
@@ -217,11 +220,13 @@ internal sealed partial class CameraRawPanel
         for (var index = 0; index < _rows.Count; index++) _rows[index].Slider.Value = _fallbacks[index];
         _glowStyle.SelectedIndex = _vignetteStyle.SelectedIndex = _geometryProjection.SelectedIndex = 0;
         _uprightChoice.SelectedIndex = 0;
+        _upright = CameraRawUprightMode.Off;
+        _curveChannel.SelectedIndex = 0;
         _pointList.Clear(); _point = null; Labelled();
         _shadowClip.IsChecked = _highlightClip.IsChecked = _sharpenMaskView.IsChecked = false;
         RefreshClipping();
         SetDrawing(false);
-        if (_curve is not null) _curve.Curves = new Compositor.Core.Format.CurvesSettings();
+        if (_curve is not null) { _curve.Curves = new Compositor.Core.Format.CurvesSettings(); _curve.Channel = 0; }
         ClearGuides();
     }
 
@@ -358,9 +363,8 @@ internal sealed partial class CameraRawPanel
         // with the amounts it is added to, because that is what it is — the lines ask for a turn and, when one
         // of them is steep, a keystone, and the sliders add to that.
         _upright = start.Geometry.Upright;
-        _uprightChoice.ItemsSource = new[] { "Off", "Guided" };
         _uprightChoice.SelectedIndex = (int)_upright;
-        _uprightChoice.SelectionChanged += (_, _) =>
+        _uprightChoice.Changed += _ =>
         {
             _upright = (CameraRawUprightMode)Math.Max(0, _uprightChoice.SelectedIndex);
             RefreshPreview();
@@ -399,11 +403,9 @@ internal sealed partial class CameraRawPanel
         Add(groups, "Blue saturation", -100, 100, start.BlueSaturation, (s, v) => s.BlueSaturation = v, fallback: defaults.BlueSaturation);
 
         groups.Children.Add(Heading("Curve"));
-        _curveChannel.ItemsSource = new[] { "Whole picture", "Red", "Green", "Blue" };
         _curveChannel.SelectedIndex = Math.Clamp((int)start.Curve.Channel, 0, 3);
-        _curveChannel.Width = 160;
         _curve = new CurveEditor { Curves = Clone(start.Curve), Height = 220 };
-        _curveChannel.SelectionChanged += (_, _) => _curve.Channel = Math.Max(0, _curveChannel.SelectedIndex);
+        _curveChannel.Changed += index => _curve.Channel = index;
         _curve.Changed += RefreshPreview;
         groups.Children.Add(_curveChannel);
         groups.Children.Add(_curve);

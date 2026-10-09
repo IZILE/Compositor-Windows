@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+left to right direction
+rectangle "已完成\n工具／标签／分段／菜单\n连续移动与中断续接" as motion #254B3D
+rectangle "已完成\n画布缓存、后台预览\n像素与生命周期检查" as speed #254B3D
+rectangle "已完成\n887 核心测试\n2161 界面断言\n92 弹窗布局" as qa #254B3D
+rectangle "当前\n0.6.0 覆盖安装与公开发布\n等待运行中的程序退出" as release #4A4230
+rectangle "待完成\n复杂计算、裁剪警告\n不同 DPI、Mac 实机对照" as next #393B42
+motion --> qa
+speed --> qa
+qa --> release
+release --> next
+@enduml

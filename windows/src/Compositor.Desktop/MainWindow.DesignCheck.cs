@@ -87,35 +87,35 @@ public sealed partial class MainWindow
         foreach (var id in _tabStrip.VisibleIDs)
         {
             var pill = (Border)_tabStrip.Pill(id)!;
-            Check(pill.CornerRadius.TopLeft == 14 && pill.Transitions?.Count == 2, "project tabs animate their rounded selected background and edge");
+            Check(pill.CornerRadius.TopLeft == 14 && _tabStrip.Indicator.CornerRadius.TopLeft == 14,
+                "project tabs share one rounded moving selection background");
         }
-        var clockType = typeof(Animatable).Assembly.GetType("Avalonia.Animation.ClockBase", true)!;
-        var clockProperty = typeof(Animatable).GetProperty("Clock", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        var pulse = clockType.GetMethod("Pulse", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         SetTool(Tool.Pan); Layout();
         var brushButton = _rail.ButtonFor(Tool.Brush)!;
-        var brushFace = brushButton.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "buttonFace");
-        var controlledClock = Activator.CreateInstance(clockType, nonPublic: true)!;
-        var originalClock = clockProperty.GetValue(brushFace); clockProperty.SetValue(brushFace, controlledClock);
-        double Alpha() => brushFace.Background is ISolidColorBrush color ? color.Color.A * color.Opacity / 255 : 0;
-        void Pulse(int time) { pulse.Invoke(controlledClock, [TimeSpan.FromMilliseconds(time)]); Layout(); }
-        try
+        using (var railClock = new UiAnimationClock(_rail.SelectionPosition))
         {
+            void Pulse(int time) { railClock.Pulse(time); Layout(); }
+            var start = _rail.SelectionPosition.Y;
             Pulse(0); Click(brushButton); Pulse(0);
+            var destination = _rail.SelectionDestination;
             var frames = new List<double>();
-            for (var time = 0; time <= 140; time += 10) { Pulse(time); frames.Add(Alpha()); }
-            Check(frames[0] < 0.01 && frames.Skip(1).SkipLast(1).Any(alpha => alpha is > 0.001 and < 0.11), "tool selection has intermediate fade frames");
-            Check(frames.Zip(frames.Skip(1)).All(pair => pair.Second + 0.001 >= pair.First), "tool selection advances without jumping back");
-            Pulse(150); SetTool(Tool.Pan); Pulse(180); var before = Alpha();
-            SetTool(Tool.Brush); Pulse(180); var after = Alpha();
-            Check(Math.Abs(after - before) < 0.003, "reversing a tool transition continues from its current appearance");
-            for (var index = 0; index < 8; index++) { Pulse(200 + index * 20); SetTool(index % 2 == 0 ? Tool.Pan : Tool.Brush); }
-            Pulse(600);
-            Check(Math.Abs(Alpha() - 31 / 255.0) < 0.002 && _rail.Marked == Tool.Brush && _tool == Tool.Brush,
+            for (var time = 0; time <= 160; time += 10)
+            {
+                Pulse(time); frames.Add(_rail.SelectionPosition.Y);
+                if (time % 40 == 0) Capture($"rail-selection-{time:000}.png");
+            }
+            Check(Math.Abs(frames[0] - start) < 0.1 && frames.Skip(1).SkipLast(1).Any(value => value > destination && value < start),
+                "tool selection travels between buttons through intermediate frames");
+            Check(frames.Zip(frames.Skip(1)).All(pair => pair.Second <= pair.First + 0.01), "tool selection advances without jumping back");
+            Pulse(170); SetTool(Tool.Pan); Pulse(170); Pulse(200); var before = _rail.SelectionPosition.Y;
+            SetTool(Tool.Brush); Pulse(200); var after = _rail.SelectionPosition.Y;
+            Check(Math.Abs(after - before) < 0.1, "reversing a tool transition continues from its current position");
+            for (var index = 0; index < 8; index++) { Pulse(220 + index * 20); SetTool(index % 2 == 0 ? Tool.Pan : Tool.Brush); Pulse(220 + index * 20); }
+            Pulse(700);
+            Check(Math.Abs(_rail.SelectionPosition.Y - _rail.SelectionDestination) < 0.1 && _rail.Marked == Tool.Brush && _tool == Tool.Brush,
                 "rapid tool switching finishes on the latest choice without a stale animated state");
             System.IO.File.WriteAllText(System.IO.Path.Combine(output, "tool-selection-motion.txt"), string.Join(", ", frames));
         }
-        finally { clockProperty.SetValue(brushFace, originalClock); }
 
         if (_document is { } document)
         {
@@ -152,6 +152,10 @@ public sealed partial class MainWindow
             }
         }
         ControlMotionChecks.Run(report, output);
+        SelectionMotionChecks.Run(report, output);
+        MenuMotionChecks.Run(report, output);
         ChangeLanguage("zh-CN"); Layout(); Capture("design-unified-zh-CN.png");
+        foreach (var message in CanvasView.RasterCacheSelfCheck()) Check(true, message);
+        PreviewWorkerSelfCheck(report);
     }
 }
