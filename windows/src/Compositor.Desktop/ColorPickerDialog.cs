@@ -149,6 +149,15 @@ internal sealed class ColorPickerDialog : DialogWindow
             },
         });
 
+        var swatches = new Button { [!ContentControl.ContentProperty] = UiText.Bind("Swatches…"), HorizontalAlignment = HorizontalAlignment.Left };
+        SwatchesButton = swatches;
+        swatches.Click += async (_,_) =>
+        {
+            var original = Colour; var dialog = MaterialPickers.Colors();
+            void Preview(ColorPreset color) { var c = new SkiaSharp.SKColor(color.Color); Sample((c.Red/255d,c.Green/255d,c.Blue/255d)); }
+            dialog.PreviewChanged += Preview; await dialog.ShowDialog(this);
+            if (dialog.Result is { } color) Preview(color); else Sample(original);
+        };
         var right = new StackPanel
         {
             Width = 180,
@@ -162,6 +171,7 @@ internal sealed class ColorPickerDialog : DialogWindow
                     Children = { _preview, buttons },
                 },
                 numbers,
+                swatches,
                 new TextBlock
                 {
                     [!TextBlock.TextProperty] = UiText.Bind("Click the canvas to sample"),
@@ -197,6 +207,7 @@ internal sealed class ColorPickerDialog : DialogWindow
     internal Button Ok { get; }
 
     internal Button Cancel { get; }
+    internal Button SwatchesButton { get; }
 
     /// <summary>
     /// Takes a colour sampled from the canvas: the field moves to it and the numbers follow, which is what a

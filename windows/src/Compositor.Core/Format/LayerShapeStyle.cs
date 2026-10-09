@@ -19,4 +19,21 @@ public sealed class LayerShapeStyle
 
     public JsonPoint? Start { get; set; }
     public JsonPoint? End { get; set; }
+
+    /// <summary>Normalized, single-fill SVG path; available from the Windows format extension 12.</summary>
+    public string? PathData { get; set; }
+    public bool? EvenOdd { get; set; }
+
+    public bool IsValid
+    {
+        get
+        {
+            if (!Enum.IsDefined(Kind) || new[] {Red,Green,Blue}.Any(v=>!double.IsFinite(v) || v is < 0 or > 1)
+                || !double.IsFinite(CornerRadius) || CornerRadius < 0 || LineWidth is { } width && (!double.IsFinite(width) || width <= 0)) return false;
+            if (Kind != ShapeKind.Custom) return PathData is null && EvenOdd is null;
+            if (PathData is not { Length: > 0 and <= 2 * 1024 * 1024 }) return false;
+            using var path = SkiaSharp.SKPath.ParseSvgPathData(PathData);
+            return path is {IsEmpty:false} && path.Points.All(p=>float.IsFinite(p.X) && float.IsFinite(p.Y) && Math.Abs(p.X)<=2 && Math.Abs(p.Y)<=2);
+        }
+    }
 }

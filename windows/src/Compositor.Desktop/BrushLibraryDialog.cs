@@ -22,7 +22,9 @@ internal sealed class BrushLibraryDialog : DialogWindow
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Foreground = Skin.SecondaryBrush };
     private readonly Button _import = new() { [!ContentControl.ContentProperty] = UiText.Bind("Import brushes…") };
     private readonly Button _use = new() { [!ContentControl.ContentProperty] = UiText.Bind("Use Brush"), IsDefault = true };
-    private readonly List<Bitmap> _thumbnails = [];
+    private readonly List<MaterialPreview> _thumbnails = [];
+    private readonly MaterialPreview _preview = new() { Height = 150 };
+    private readonly TextBlock _previewName = new() { TextWrapping = TextWrapping.Wrap, FontWeight = FontWeight.SemiBold };
     private readonly List<BrushTip> _tips = [];
     private readonly List<BrushPreset> _choices = [];
     private readonly string _libraryPath;
@@ -35,12 +37,15 @@ internal sealed class BrushLibraryDialog : DialogWindow
     internal StackPanel Rows => _rows;
     internal SelectionIndicator Indicator => _selection;
     internal BrushPreset? Result => _result;
+    internal MaterialPreview Preview => _preview;
+    internal int BuiltInCount => MaterialPresets.Brushes.Count;
+    internal event Action<BrushPreset>? PreviewChanged;
 
     internal BrushLibraryDialog(BrushSettings current, string? libraryPath = null)
     {
         _libraryPath = libraryPath ?? BrushLibrary.DefaultPath;
         UiText.Set(this, TitleProperty, "Brushes");
-        Width = 540; Height = 520; MinWidth = 420; MinHeight = 360;
+        Width = 680; Height = 540; MinWidth = 620; MinHeight = 400;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         try { _tips.AddRange(BrushLibrary.Load(_libraryPath)); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
@@ -66,14 +71,21 @@ internal sealed class BrushLibraryDialog : DialogWindow
         actions.Children.Add(_import);
         var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { cancel, _use } };
         Grid.SetColumn(right, 2); actions.Children.Add(right);
+        var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,240"), ColumnSpacing = 18 };
+        body.Children.Add(_scroll);
+        var detail = new StackPanel { Spacing = 14, Children = {
+            new Border { Padding = new Thickness(10), Background = Skin.PasteboardBrush, CornerRadius = new CornerRadius(8), Child = _preview }, _previewName,
+            new TextBlock { [!TextBlock.TextProperty] = UiText.Bind("Live preview · Choose an item to see its actual appearance."), TextWrapping = TextWrapping.Wrap, Foreground = Skin.SecondaryBrush }
+        } };
+        Grid.SetColumn(detail,1); body.Children.Add(detail);
         var grid = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto"), Margin = new Thickness(18), RowSpacing = 12 };
         grid.Children.Add(new TextBlock { [!TextBlock.TextProperty] = UiText.Bind("Import ABR sampled tips or PNG masks. ABR descriptor names, angle, texture, scattering and dual-brush settings are not imported."), TextWrapping = TextWrapping.Wrap });
-        Grid.SetRow(_scroll, 1); grid.Children.Add(_scroll);
+        Grid.SetRow(body, 1); grid.Children.Add(body);
         Grid.SetRow(_status, 2); grid.Children.Add(_status);
         Grid.SetRow(actions, 3); grid.Children.Add(actions); Content = grid;
         Rebuild();
-        var importedIndex = current.Tip is { } tip ? _tips.FindIndex(item => item.ID == tip.ID) : -1;
-        _selected = importedIndex >= 0 ? importedIndex + 2 : current.Hardness < 1 ? 1 : 0;
+        var tipIndex = current.Tip is { } tip ? _choices.FindIndex(item => item.Tip?.ID == tip.ID) : -1;
+        Pick(tipIndex >= 0 ? tipIndex : current.Hardness < 1 ? 1 : 0);
         _rows.SizeChanged += (_, _) => Place();
         Opened += (_, _) => Place();
         KeyDown += (_, args) =>
@@ -81,7 +93,7 @@ internal sealed class BrushLibraryDialog : DialogWindow
             if (args.Key is not (Key.Up or Key.Down) || args.Source is TextBox) return;
             Pick(Math.Clamp(_selected + (args.Key == Key.Down ? 1 : -1), 0, _choices.Count - 1)); args.Handled = true;
         };
-        Closed += (_, _) => { _closed = true; foreach (var image in _thumbnails) image.Dispose(); };
+        Closed += (_, _) => { _closed = true; _preview.Dispose(); foreach (var image in _thumbnails) image.Dispose(); };
     }
 
     internal async Task ImportFiles(IEnumerable<string> paths)
@@ -107,32 +119,29 @@ internal sealed class BrushLibraryDialog : DialogWindow
     private void Rebuild()
     {
         _rows.Children.Clear(); foreach (var image in _thumbnails) image.Dispose(); _thumbnails.Clear(); _choices.Clear();
-        Add("Hard Round", new BrushPreset(null, 1)); Add("Soft Round", new BrushPreset(null, 0));
+        foreach (var style in MaterialPresets.Brushes) Add(style.Name, new BrushPreset(style.Tip, style.Hardness));
         foreach (var tip in _tips) Add(tip.Name, new BrushPreset(tip, null));
         void Add(string name, BrushPreset preset)
         {
             var index = _choices.Count; _choices.Add(preset);
-            using var pixels = new SKBitmap(64, 40, SKColorType.Rgba8888, SKAlphaType.Unpremul);
-            var span = pixels.GetPixelSpan();
-            for (var y = 0; y < 40; y++) for (var x = 0; x < 64; x++)
-            {
-                var coverage = preset.Tip?.Sample(x - 31.5, y - 19.5, 34)
-                    ?? BrushEdits.Tip(Math.Sqrt(Math.Pow(x - 31.5, 2) + Math.Pow(y - 19.5, 2)), 17, preset.Hardness!.Value);
-                var at = (y * 64 + x) * 4; span[at] = span[at + 1] = span[at + 2] = 255; span[at + 3] = (byte)Math.Round(coverage * 255);
-            }
-            using var data = pixels.Encode(SKEncodedImageFormat.Png, 100); using var stream = data.AsStream();
-            var bitmap = new Bitmap(stream); _thumbnails.Add(bitmap);
-            var title = new TextBlock { Text = preset.Tip is null ? UiText.Get(name) : name, TextTrimming = TextTrimming.CharacterEllipsis,
+            var preview = new MaterialPreview { Width = 64, Height = 40 }; preview.Show(new BrushStyle(name,preset.Tip,preset.Hardness),64,40); _thumbnails.Add(preview);
+            var title = new TextBlock { Text = index < BuiltInCount ? UiText.Get(name) : name, TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center };
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("64,12,*") };
-            row.Children.Add(new Image { Source = bitmap, Width = 64, Height = 40 }); Grid.SetColumn(title, 2); row.Children.Add(title);
+            row.Children.Add(preview); Grid.SetColumn(title, 2); row.Children.Add(title);
             var button = new Button { Classes = { "plain", "selection-item" }, Height = 48, Padding = new Thickness(10, 4),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch, Content = row };
             ToolTip.SetTip(button, preset.Tip is null ? UiText.Get(name) : name);
             button.Click += (_, _) => Pick(index); _rows.Children.Add(button);
         }
     }
-    private void Pick(int index) { _selected = index; Place(); _rows.Children[index].BringIntoView(); }
+    private void Pick(int index)
+    {
+        _selected = index; var preset = _choices[index];
+        var name = preset.Tip?.Name ?? (preset.Hardness == 0 ? "Soft Round" : "Hard Round");
+        _preview.Show(new BrushStyle(name,preset.Tip,preset.Hardness)); _previewName.Text = UiText.Get(name);
+        Place(); _rows.Children[index].BringIntoView(); PreviewChanged?.Invoke(preset);
+    }
     private void Place()
     {
         if (_selected >= _rows.Children.Count || _rows.Children[_selected].Bounds.Width <= 0) return;

@@ -178,7 +178,24 @@ both selected and unselected backgrounds, in addition to geometry, press feedbac
 Tab updates also reuse the existing text control: replacing it on selection briefly invalidated pointer
 hover, interrupting the release feedback even though the selection surface itself remained continuous.
 
-## Limits
+## 0.6.5 material libraries and startup
+
+The brush selector shows the current stroke style with no redundant arrow. It opens a live preview with
+14 built-in static styles plus ABR/PNG imports. Shapes offer 18 editable built-ins and filled SVG path
+imports. Gradients offer 12 presets, fixed linear-RGB GGR imports and all five tool geometries. Pattern
+Fill offers 10 tile presets and PNG/JPEG/WebP imports; the color picker offers 36 swatches and GPL imports.
+Selection uses one continuously moving surface. Choosing previews immediately; cancel restores tool
+settings or discards the separate fill-preview document. Imported libraries survive application upgrades.
+
+The main window resolves screen bounds before its first native Show instead of resizing from Opened.
+File arguments also load before the first visible frame. This removes a confirmed post-show geometry
+change; physical GPU/display startup frames and native Mac animation timing still need comparison.
+
+Ordinary projects remain format 11. Extended editable shapes use the documented Windows format 12;
+older Mac readers require a flattened export. SVG import is a single-fill silhouette importer, and GGR
+import rejects nonlinear/HSV/dynamic-color segments rather than silently changing their appearance.
+
+## Remaining limits
 
 This customized community build follows the existing C# port, not every feature of the
 latest macOS application. Apple Vision subject selection/background removal is not implemented.

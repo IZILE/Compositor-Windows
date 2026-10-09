@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+title 阶段 10b：0.6.4 交付完成
+rectangle "已完成：修复与功能\n自适应滑条＋数字／形状切换\n静态笔尖导入／液化、涂抹提速" as implementation #254B3D
+rectangle "已完成：本机交付\n原位置升级／设置和固定快捷方式保留\n可选目录安装、升级、卸载通过" as local #254B3D
+rectangle "已完成：公开与独立验证\nGitHub 三份附件摘要相符／384 个源码文件\n独立 Windows：962 项核心测试＋十三组检查" as cloud #254B3D
+rectangle "当前：桌面可打开 0.6.4\n中英切换／Windows 操作逻辑\n已记录功能边界和下一轮瓶颈" as current #4A4230
+rectangle "待完成\n图章、模糊笔刷／复杂合成和大图等待\n完整 ABR 参数／Mac 功能与实机动效对照" as pending #393B42
+implementation -down-> local
+local -down-> cloud
+cloud -down-> current
+current -down-> pending
+@enduml

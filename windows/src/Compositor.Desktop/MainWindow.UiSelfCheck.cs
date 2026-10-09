@@ -369,6 +369,7 @@ public sealed partial class MainWindow
         Photograph("tabs-reordered.png");
         _tabs.RemoveAll(tab => !ReferenceEquals(tab, held)); RefreshTabs();
         BrushControlsSelfCheck(output, report);
+        MaterialControlsSelfCheck(output, report);
         MacParitySelfCheck(output, report);
         Width = 1180; Height = 780; SetTool(Tool.Move); Layout(); _canvas.Fit();
         DesignSelfCheck(output, report);

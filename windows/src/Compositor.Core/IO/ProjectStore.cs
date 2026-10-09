@@ -39,6 +39,12 @@ public static class ProjectStore
         var version = manifest.Version;
         foreach (var layer in manifest.Layers)
         {
+            if (layer.Shape is { } shape)
+            {
+                if (!shape.IsValid || shape.Kind > ShapeKind.Line && version < 12 || layer.IsGroup == true
+                    || layer.ImageFile is null || layer.Adjustment is not null || layer.Text is not null)
+                    throw new ProjectException(ProjectError.Invalid);
+            }
             if (layer.Text is { } text)
             {
                 // Per-letter colors arrived in version 10, per-letter faces in version 11.

@@ -67,6 +67,15 @@ public static class ShapeEdits
         var bounds = SKRect.Create(0, 0, width, height);
         switch (style.Kind)
         {
+            case ShapeKind.Custom:
+            {
+                using var path = style.PathData is { Length: > 0 and <= 2 * 1024 * 1024 } data ? SKPath.ParseSvgPathData(data) : null;
+                if (path is null || path.IsEmpty) { image.Dispose(); return null; }
+                path.FillType = style.EvenOdd == true ? SKPathFillType.EvenOdd : SKPathFillType.Winding;
+                path.Transform(SKMatrix.CreateScale(width, height));
+                using var fill = new SKPaint { Color = colour, IsAntialias = true };
+                canvas.DrawPath(path, fill); break;
+            }
             case ShapeKind.Line:
             {
                 // The ends sit where they were dragged; a line with none stored ran corner to corner, inset by
@@ -96,6 +105,13 @@ public static class ShapeEdits
             }
             default:
             {
+                if (style.Kind != ShapeKind.Rectangle)
+                {
+                    using var path = ShapePaths.Create(style.Kind, bounds);
+                    using var color = new SKPaint { Color = colour, IsAntialias = true, Style = SKPaintStyle.Fill };
+                    canvas.DrawPath(path, color);
+                    break;
+                }
                 var radius = Math.Min(Math.Max(0, style.CornerRadius), Math.Min(bounds.Width, bounds.Height) / 2);
                 using var fill = new SKPaint { Color = colour, IsAntialias = true, Style = SKPaintStyle.Fill };
                 if (radius > 0) canvas.DrawRoundRect(bounds, (float)radius, (float)radius, fill);

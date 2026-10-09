@@ -241,7 +241,7 @@ public sealed partial class CanvasView : Control
     private SKBitmap? _shapePreview;
     private WriteableBitmap? _shapePreviewImage;
     private readonly record struct ShapePreviewKey(Format.ShapeKind Kind, double Red, double Green, double Blue,
-        double Radius, double? Width, Format.JsonPoint? Start, Format.JsonPoint? End, SKRectI Box, SKRectI Placement);
+        double Radius, double? Width, Format.JsonPoint? Start, Format.JsonPoint? End, SKRectI Box, SKRectI Placement, string? PathData, bool? EvenOdd);
     private ShapePreviewKey? _shapePreviewKey;
     internal SKBitmap? ShapeDraftPixels => _shapePreview;
     private SKRectI _shapePreviewAt;
@@ -825,7 +825,7 @@ public sealed partial class CanvasView : Control
         if (ShapePreviewFor is not { } ask || _shapeBox.Width <= 0 || _shapeBox.Height <= 0) return;
         var (style, at) = ask(_shapeBox, _shapeAnchor, _shapeEnd);
         var key = new ShapePreviewKey(style.Kind, style.Red, style.Green, style.Blue, style.CornerRadius,
-            style.LineWidth, style.Start, style.End, _shapeBox, at);
+            style.LineWidth, style.Start, style.End, _shapeBox, at, style.PathData, style.EvenOdd);
         if (_shapePreviewKey != key)
         {
             // Include style and line endpoints: another shape can share the exact same bounds.

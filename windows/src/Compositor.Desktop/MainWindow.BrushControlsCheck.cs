@@ -82,7 +82,7 @@ public sealed partial class MainWindow
             this.MouseUp(drag, MouseButton.Left, RawInputModifiers.None); Layout();
             Check(!compact.SliderExpanded, $"{locale}: compact layout resumes after the drag is released");
             Width = 1180; SetTool(Tool.Shape); Layout(); _canvas.Fit();
-            foreach (var kind in Enum.GetValues<ShapeKind>())
+            foreach (var kind in new[] {ShapeKind.Rectangle,ShapeKind.Ellipse,ShapeKind.Line})
             {
                 ClickIn(_optionsBar.ShapeChoice.ButtonAt((int)kind)); Layout();
                 Check(_options.Shape == kind && _canvas.ShapeKind == kind && _shapeKindItems[kind].IsChecked,
@@ -144,13 +144,13 @@ public sealed partial class MainWindow
         {
             animation.Pulse(0); animation.Pulse(200); ClickIn(dialog.Rows.Children[0]); animation.Pulse(210); animation.Pulse(410);
             var startY = dialog.Indicator.Position.Y;
-            ClickIn(dialog.Rows.Children[2]); animation.Pulse(420); animation.Pulse(460);
+            ClickIn(dialog.Rows.Children[4]); animation.Pulse(420); animation.Pulse(460);
             Check(dialog.Indicator.Position.Y > startY && dialog.Indicator.Position.Y < dialog.Indicator.Destination.Y,
                 "brush list selection moves continuously between rows");
             var before = dialog.Indicator.Position.Y; ClickIn(dialog.Rows.Children[1]); animation.Pulse(461);
             Check(Math.Abs(dialog.Indicator.Position.Y - before) < 0.001,
                 "rapid brush list retargeting starts at the currently displayed selection");
-            animation.Pulse(650); ClickIn(dialog.Rows.Children[2]); animation.Pulse(660); animation.Pulse(860);
+            animation.Pulse(650); ClickIn(dialog.Rows.Children[dialog.BuiltInCount]); animation.Pulse(660); animation.Pulse(860);
             Photograph(dialog, "brush-library-zh-CN");
         }
         ClickIn(dialog.UseButton); Check(dialog.Result?.Tip is not null, "Use Brush applies the imported selection");

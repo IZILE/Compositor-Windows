@@ -259,7 +259,7 @@ public class ManifestFormatTests : ProjectTestBase
         Assert.Equal(["RGB", "Red", "Green", "Blue"], Enum.GetValues<LevelsChannel>().Select(RawEnum));
         Assert.Equal(["Master", "Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas"], Enum.GetValues<ColorRange>().Select(RawEnum));
         Assert.Equal(["Left", "Center", "Right"], Enum.GetValues<TextAlignment>().Select(RawEnum));
-        Assert.Equal(["Rectangle", "Ellipse", "Line"], Enum.GetValues<ShapeKind>().Select(RawEnum));
+        Assert.Equal(["Rectangle", "Ellipse", "Line", "Triangle", "RightTriangle", "Diamond", "Pentagon", "Hexagon", "Octagon", "Star", "Heart", "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "DoubleArrow", "SpeechBubble", "Plus", "Custom"], Enum.GetValues<ShapeKind>().Select(RawEnum));
         Assert.Equal(["horizontal", "vertical"], Enum.GetValues<GuideAxis>().Select(RawEnum));
     }
 

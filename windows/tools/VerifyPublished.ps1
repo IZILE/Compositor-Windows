@@ -10,7 +10,7 @@ $jobs = @(
     @('clicks-zh','zh-CN','--clicks',$false), @('shortcuts','en','--shortcuts',$false),
     @('camera-raw','zh-CN','--camera-raw',$false), @('performance','en','--performance',$false),
     @('native-icons','en','--native-icons',$true), @('brush-performance','en','--brush-performance',$false),
-    @('stroke-tools-performance','en','--stroke-tools-performance',$false))
+    @('stroke-tools-performance','en','--stroke-tools-performance',$false), @('materials','zh-CN','--materials',$true))
 $previousData = $env:COMPOSITOR_DATA_DIR
 $previousFastCheck = $env:COMPOSITOR_MAC_QA_ONLY
 $results = @()

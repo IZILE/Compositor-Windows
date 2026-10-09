@@ -1,0 +1,109 @@
+{
+  "document": "2048x1536, one raster layer, 1024-point 18-radian path",
+  "renderer": "Avalonia headless / real Skia CPU; no physical presentation timing",
+  "results": [
+    {
+      "name": "paint-40-hard",
+      "apply_median_ms": 328.2878,
+      "apply_worst_ms": 338.1056,
+      "history_median_ms": 0.0678,
+      "pixel_sha256": "cf2533aa25224e6cfcecd586e7a6528a5f789f029d46e2b9dafa2d9f0b4ea330",
+      "incremental_update_median_ms": 0.2983,
+      "incremental_update_p95_ms": 0.4361,
+      "incremental_update_worst_ms": 0.8735,
+      "release_ms": 18.5892
+    },
+    {
+      "name": "erase-40-hard",
+      "apply_median_ms": 312.0272,
+      "apply_worst_ms": 313.0702,
+      "history_median_ms": 0.068,
+      "pixel_sha256": "06fd2ac048d8ccdc7fde687eb9306eb3330c86d402305b3fea7881e691e51651",
+      "incremental_update_median_ms": 0.298,
+      "incremental_update_p95_ms": 0.436,
+      "incremental_update_worst_ms": 0.8635,
+      "release_ms": 14.7172
+    },
+    {
+      "name": "paint-40-soft",
+      "apply_median_ms": 920.9146,
+      "apply_worst_ms": 932.8455,
+      "history_median_ms": 0.0578,
+      "pixel_sha256": "9d4b7f8b64da696eb3308a1c93af60d7ae157b151d224b2d55926287258b6b4b",
+      "incremental_update_median_ms": 0.9054,
+      "incremental_update_p95_ms": 1.2826,
+      "incremental_update_worst_ms": 1.9006,
+      "release_ms": 18.0084
+    },
+    {
+      "name": "erase-40-soft",
+      "apply_median_ms": 922.5978,
+      "apply_worst_ms": 925.5397,
+      "history_median_ms": 0.0476,
+      "pixel_sha256": "72faa82065a9dea28eef72fc2098dfdaa2190c5240a313092f3f678ffdd590ee",
+      "incremental_update_median_ms": 0.907,
+      "incremental_update_p95_ms": 1.2592,
+      "incremental_update_worst_ms": 2.0068,
+      "release_ms": 14.426
+    },
+    {
+      "name": "paint-200-hard",
+      "apply_median_ms": 794.5585,
+      "apply_worst_ms": 796.4235,
+      "history_median_ms": 0.0247,
+      "pixel_sha256": "32fd79b4a4dcb5a9512ab4fef27a1a3174c373b6f302b8b427a393e30d7d5b68",
+      "incremental_update_median_ms": 0.682,
+      "incremental_update_p95_ms": 1.5511,
+      "incremental_update_worst_ms": 2.2475,
+      "release_ms": 27.6179
+    },
+    {
+      "name": "erase-200-hard",
+      "apply_median_ms": 779.2059,
+      "apply_worst_ms": 780.1776,
+      "history_median_ms": 0.0233,
+      "pixel_sha256": "ab53ac0dacd8372a6299f1886105e63c21ea018158fbc6d22f0a5d1119311b55",
+      "incremental_update_median_ms": 0.7041,
+      "incremental_update_p95_ms": 1.5479,
+      "incremental_update_worst_ms": 2.0364,
+      "release_ms": 15.885
+    },
+    {
+      "name": "paint-200-soft",
+      "apply_median_ms": 4028.8551,
+      "apply_worst_ms": 4109.1767,
+      "history_median_ms": 0.0234,
+      "pixel_sha256": "aef80087cd17ecb247a00135980e33b0ec76468e6e5a91c64db940417dd837f6",
+      "incremental_update_median_ms": 4.6317,
+      "incremental_update_p95_ms": 6.3179,
+      "incremental_update_worst_ms": 7.5593,
+      "release_ms": 27.0379
+    },
+    {
+      "name": "erase-200-soft",
+      "apply_median_ms": 4049.3329,
+      "apply_worst_ms": 4079.5122,
+      "history_median_ms": 0.0312,
+      "pixel_sha256": "0ccb1303a71e44b9c40f3cc8bb482eacb500fc29dfd790d9350f66076a3e218e",
+      "incremental_update_median_ms": 4.6491,
+      "incremental_update_p95_ms": 6.4651,
+      "incremental_update_worst_ms": 8.9791,
+      "release_ms": 17.6965
+    },
+    {
+      "name": "draft-256-points",
+      "render_median_ms": 2.7964,
+      "render_worst_ms": 3.179
+    },
+    {
+      "name": "draft-1024-points",
+      "render_median_ms": 1.6908,
+      "render_worst_ms": 2.306
+    },
+    {
+      "name": "draft-4096-points",
+      "render_median_ms": 1.6081,
+      "render_worst_ms": 1.8628
+    }
+  ]
+}

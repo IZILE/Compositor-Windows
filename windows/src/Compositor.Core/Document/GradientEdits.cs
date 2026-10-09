@@ -4,7 +4,7 @@ using LayerTransform = Compositor.Core.Model.LayerTransform;
 
 namespace Compositor.Core.Document;
 
-/// <summary>The two shapes a gradient runs in: along the drag, or out from where it began.</summary>
+/// <summary>The five shapes a gradient can follow.</summary>
 public enum GradientShape
 {
     /// <summary>The colour runs from one end of the drag to the other.</summary>
@@ -12,12 +12,14 @@ public enum GradientShape
 
     /// <summary>The colour runs out from where the drag began, the end being on its rim.</summary>
     Radial,
+    Angle,
+    Reflected,
+    Diamond,
 }
 
 /// <summary>
 /// Filling a layer's pixels — or its mask — with a gradient. The colour runs from one end of the drag to the
-/// other, and blends over the pixels already there at the given opacity, as Photoshop's does: at full
-/// opacity it replaces what it covers, and a gradient that fades to transparent clears what it reaches.
+/// other, and alpha-composites over the pixels already there at the given opacity.
 /// </summary>
 public static class GradientEdits
 {
@@ -31,9 +33,20 @@ public static class GradientEdits
     /// simply an end with no alpha. False when there is nothing to fill or the drag is too short to paint.
     /// </summary>
     public static bool Fill(CanvasDocument document, Guid layerID, bool mask, SKPoint start, SKPoint end,
-        SKColor from, SKColor to, double opacity, GradientShape shape)
+        SKColor from, SKColor to, double opacity, GradientShape shape, GradientPreset? preset = null)
     {
         if (opacity <= 0 || !HasLine(start, end)) return false;
+        return FillSample(document, layerID, mask, opacity, at => preset?.Sample(Parameter(start, end, at, shape))
+            ?? Blend(from, to, Parameter(start, end, at, shape)));
+    }
+
+    public static bool FillPattern(CanvasDocument document, Guid layerID, bool mask, PatternPreset pattern, double opacity = 1) =>
+        FillSample(document, layerID, mask, opacity, pattern.Sample);
+
+    private static bool FillSample(CanvasDocument document, Guid layerID, bool mask, double opacity, Func<SKPoint, SKColor> sample)
+    {
+        if (opacity <= 0 || !double.IsFinite(opacity)) return false;
+        opacity = Math.Min(1, opacity);
         if (document.Layers.FirstOrDefault(layer => layer.ID == layerID) is not { } layer) return false;
 
         SKBitmap pixels;
@@ -89,7 +102,7 @@ public static class GradientEdits
         using (var _ = clip)
         {
             var span = clip is null ? default : clip.GetPixelSpan();
-            Paint(pixels, start, end, from, to, opacity, shape, toDocument, span, clip?.RowBytes ?? 0, region);
+            Paint(pixels, sample, opacity, toDocument, span, clip?.RowBytes ?? 0, region);
         }
         if (mask) layer.Mask = layer.Mask!.Replacing(ImportedImage.Create(pixels, layer.Mask.Asset.Name));
         else layer.Asset = ImportedImage.Create(pixels, layer.Asset!.Name);
@@ -109,9 +122,19 @@ public static class GradientEdits
             var distance = Math.Sqrt(Math.Pow(point.X - start.X, 2) + Math.Pow(point.Y - start.Y, 2));
             return Math.Clamp(distance / radius, 0, 1);
         }
+        if (shape == GradientShape.Angle)
+        {
+            var turn = Math.Atan2(point.Y - start.Y, point.X - start.X) - Math.Atan2(dy, dx);
+            return (turn / (Math.PI * 2) % 1 + 1) % 1;
+        }
+        if (shape == GradientShape.Diamond)
+        {
+            var x = point.X - start.X; var y = point.Y - start.Y;
+            return Math.Clamp((Math.Abs(x * dx + y * dy) + Math.Abs(y * dx - x * dy)) / lengthSquared, 0, 1);
+        }
         // The point projected onto the run, so a colour band is square to it however the drag is angled.
         var along = ((point.X - start.X) * dx + (point.Y - start.Y) * dy) / lengthSquared;
-        return Math.Clamp(along, 0, 1);
+        return Math.Clamp(shape == GradientShape.Reflected ? Math.Abs(along) : along, 0, 1);
     }
 
     /// <summary>The colour part of the way along: straight alpha, lerped so a faded end fades out.</summary>
@@ -123,8 +146,8 @@ public static class GradientEdits
             Channel(from.Alpha, to.Alpha));
     }
 
-    private static void Paint(SKBitmap pixels, SKPoint start, SKPoint end, SKColor from, SKColor to,
-        double opacity, GradientShape shape, SKMatrix toDocument, ReadOnlySpan<byte> clip, int clipStride,
+    private static void Paint(SKBitmap pixels, Func<SKPoint, SKColor> sample,
+        double opacity, SKMatrix toDocument, ReadOnlySpan<byte> clip, int clipStride,
         SKRectI region)
     {
         var grayscale = pixels.ColorType == SKColorType.Gray8;
@@ -143,7 +166,7 @@ public static class GradientEdits
                     coverage *= clip[row * clipStride + column] / 255.0;
                 }
                 if (coverage <= 0) continue;
-                var colour = Blend(from, to, Parameter(start, end, at, shape));
+                var colour = sample(at);
                 var alpha = colour.Alpha / 255.0 * coverage;
                 if (alpha <= 0) continue;
                 if (grayscale)

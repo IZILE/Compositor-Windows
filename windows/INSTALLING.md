@@ -1,4 +1,4 @@
-# Compositor Windows 0.6.4
+# Compositor Windows 0.6.5
 
 从 GitHub Releases 下载 `Compositor-Setup.exe`。默认安装到当前用户的 C 盘程序目录
 `%LOCALAPPDATA%\Programs\Compositor`，同时建立桌面和开始菜单快捷方式。

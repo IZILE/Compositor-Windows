@@ -1,0 +1,19 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 11A：素材导入、实时预览与启动
+rectangle "已完成\n18 种形状 · 14 种笔刷\n12 组渐变 · 10 种图案 · 36 色" as catalog #DDF2DF
+rectangle "已完成\nSVG / GGR / GPL / 图片导入\n选择即预览，取消还原" as import #DDF2DF
+rectangle "已完成\n连续选中动画 · 去除多余箭头\n显示前确定窗口大小与位置" as ui #DDF2DF
+rectangle "已完成\n998 项核心测试\n双语布局与真实输入路径检查" as checks #DDF2DF
+rectangle "当前\n最终 EXE 与安装升级验证\n精简仓库首页，加入截图和动图" as packaging #FFF0BB
+rectangle "待完成\n公开 0.6.5 Release\n独立 GitHub 云端构建验证" as release #E7E9ED
+rectangle "后续仍需\nMac 实机逐帧和物理 DPI 对照\n未移植功能与复杂画布性能" as later #E7E9ED
+catalog --> import
+import --> ui
+ui --> checks
+checks --> packaging
+packaging --> release
+release --> later
+@enduml

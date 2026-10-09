@@ -115,6 +115,12 @@ internal static partial class Program
         if (args is ["--windows-integration", var integrationOutput]) return WindowsIntegration(integrationOutput);
         if (args is ["--ui-check", var uiOutput]) return UiCheck(uiOutput);
         if (args is ["--brush-controls", var brushControlsOutput]) return UiCheck(brushControlsOutput, brushOnly: true);
+        if (args is ["--materials", var materialOutput])
+        {
+            BuildHeadless().SetupWithoutStarting(); Directory.CreateDirectory(materialOutput);
+            var sample=Path.Combine(materialOutput,"GettingStarted.comp"); SampleProject.Create(sample);
+            Console.WriteLine(new MainWindow().MaterialSelfCheck(sample,Path.GetFullPath(materialOutput))); return 0;
+        }
         if (args is ["--dialog-check", var dialogCheckOutput]) return DialogCheck(dialogCheckOutput);
         // `--camera-raw` drives the Camera Raw panel without a pointer — opened on a layer, amounts moved, the
         // preview run, then Apply and Cancel — and draws the window with the panel still up, which is the only

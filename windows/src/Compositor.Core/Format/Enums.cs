@@ -86,6 +86,22 @@ public enum ShapeKind
     Rectangle,
     Ellipse,
     Line,
+    Triangle,
+    RightTriangle,
+    Diamond,
+    Pentagon,
+    Hexagon,
+    Octagon,
+    Star,
+    Heart,
+    ArrowRight,
+    ArrowLeft,
+    ArrowUp,
+    ArrowDown,
+    DoubleArrow,
+    SpeechBubble,
+    Plus,
+    Custom,
 }
 
 /// <summary>Guide axis raw values are lowercase, unlike the rest of the format.</summary>

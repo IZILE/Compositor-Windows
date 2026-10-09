@@ -35,6 +35,7 @@ internal static class PsdDocumentBuilder
 
         var manifest = new ProjectManifest
         {
+            Version = 11,
             DocumentID = Guid.NewGuid(),
             Width = document.Width,
             Height = document.Height,

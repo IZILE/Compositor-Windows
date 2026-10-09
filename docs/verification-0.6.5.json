@@ -1,0 +1,102 @@
+{
+  "version": "0.6.5",
+  "platform": "Windows x64",
+  "core_tests_passed": 998,
+  "ui_assertions_passed": 3689,
+  "bilingual_dialog_cases": 102,
+  "material_startup_assertions": 46,
+  "checks": [
+    {
+      "name": "ui",
+      "exit_code": 0,
+      "report_lines": 3689,
+      "pass_lines": 3689
+    },
+    {
+      "name": "dialogs",
+      "exit_code": 0,
+      "report_lines": 103,
+      "pass_lines": 103
+    },
+    {
+      "name": "windows-en",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "windows-zh",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "lifecycle",
+      "exit_code": 0,
+      "report_lines": 26,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-en",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-zh",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "shortcuts",
+      "exit_code": 0,
+      "report_lines": 117,
+      "pass_lines": 0
+    },
+    {
+      "name": "camera-raw",
+      "exit_code": 0,
+      "report_lines": 14,
+      "pass_lines": 0
+    },
+    {
+      "name": "performance",
+      "exit_code": 0,
+      "report_lines": 23,
+      "pass_lines": 13
+    },
+    {
+      "name": "native-icons",
+      "exit_code": 0,
+      "report_lines": 21,
+      "pass_lines": 21
+    },
+    {
+      "name": "brush-performance",
+      "exit_code": 0,
+      "report_lines": 19,
+      "pass_lines": 0
+    },
+    {
+      "name": "stroke-tools-performance",
+      "exit_code": 0,
+      "report_lines": 8,
+      "pass_lines": 4
+    },
+    {
+      "name": "materials",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 46
+    }
+  ],
+  "exe_sha256": "a0f103138894589141283be5592e816cafb5b1f9b84bd9690718be7fc3040c6f",
+  "installer_sha256": "26e4a274a06052bf357eb4f9a303353c1d20172d24d50d297dd283b9256544b5",
+  "installer_first_repeat_upgrade_uninstall": "passed",
+  "settings_preserved": "passed",
+  "installer_destination_selectable": true,
+  "new_runtime_dependencies": false,
+  "trimmed_build_shipped": false,
+  "mac_physical_comparison": "not verified"
+}

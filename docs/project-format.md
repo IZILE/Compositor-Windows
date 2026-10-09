@@ -36,6 +36,8 @@ Version 10 lets a text layer color some of its letters differently: optional `co
 
 Version 11 lets those letters use different faces too: optional `fontRuns` in the same metadata. Files declaring 1–10 cannot contain it. `colorRuns` stays valid from version 10.
 
+Version 12 is a Windows community extension for additional editable shapes: Triangle, RightTriangle, Diamond, Pentagon, Hexagon, Octagon, Star, Heart, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, DoubleArrow, SpeechBubble, Plus and Custom. Custom shapes contain `pathData`, a normalized single-fill SVG path in layer-relative coordinates, and optional `evenOdd` (default false). Import transforms and multiple paths are flattened and unioned before storage; strokes, text and effects are explicitly rejected. These shapes retain an ordinary PNG for rendering and export. The Windows writer continues to save version 11 when no extended live shape is present. Mac readers that only accept version 11 reject version 12; export a flattened PNG/PSD for those readers. Versions 1–11 may not contain extended live shape kinds.
+
 ### Additive layer fields
 
 Later fields are optional and not gated on the version, so older readers ignore them and keep the pixels or the linked mask as they were:

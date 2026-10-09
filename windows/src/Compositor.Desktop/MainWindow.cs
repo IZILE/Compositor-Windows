@@ -313,9 +313,6 @@ public sealed partial class MainWindow : Window
         MinWidth = 800;
         MinHeight = 520;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        // The two calls a screen has to be asked for are made once the window is open, which is when there is a
-        // screen to ask.
-        Opened += (_, _) => FitToScreen();
         // The picker is a window of its own and the app is left running until the last window closes, so it
         // goes with the editor rather than being left behind to hold the session open.
         Closing += HandleClosing;
@@ -397,6 +394,8 @@ public sealed partial class MainWindow : Window
         _optionsBar = new ToolOptionsBar(_options);
         _optionsBar.Changed += OptionsChanged;
         _optionsBar.BrushesAsked += () => _ = ChooseBrush();
+        _optionsBar.ShapesAsked += () => _ = ChooseShape();
+        _optionsBar.GradientsAsked += () => _ = ChooseGradient();
         _optionsBar.WandSettingAsked += which => _ = SetWand(which);
         _optionsBar.ColourAsked += ChooseColour;
         _optionsBar.FlipAsked += horizontally =>
@@ -519,6 +518,7 @@ public sealed partial class MainWindow : Window
                             "Fill with Foreground Color"),
                         Command("Fill with _Background Color", () => FillPixels(BackgroundColour(), "Fill"),
                             "Fill with Background Color"),
+                        Command("Fill with _Pattern…", () => _ = ChoosePatternFill()),
                         Command("_Clear Selection Pixels", ClearPixels),
                         new Separator(),
                         Command("Free _Transform", BeginPersistentTransform, "Free Transform"),
@@ -904,14 +904,25 @@ public sealed partial class MainWindow : Window
     /// display and taller than a 1080 one at 150%, where the bottom of this window — the status line — ends up
     /// under the taskbar and out of reach. Found by opening the real window on this machine.
     /// </summary>
+    private bool _startupPrepared;
+    internal int StartupPreparationCount { get; private set; }
+    public override void Show()
+    {
+        if (!_startupPrepared)
+        {
+            _startupPrepared = true; StartupPreparationCount++;
+            FitToScreen();
+        }
+        base.Show();
+    }
+
     private void FitToScreen()
     {
         if (Screens.Primary is not { } screen || screen.Scaling <= 0) return;
         var room = screen.WorkingArea;
         Width = Math.Min(Width, room.Width / screen.Scaling - Room);
         Height = Math.Min(Height, room.Height / screen.Scaling - Room);
-        // The window was placed from the size it was made with, so it is put back by hand: at 150% the shrinking
-        // above is what would otherwise leave its title bar above the top of the screen.
+        // Resolve the final bounds before the native surface becomes visible, avoiding an Opened resize.
         Position = new PixelPoint(
             room.X + (int)Math.Max(0, (room.Width - Width * screen.Scaling) / 2),
             room.Y + (int)Math.Max(0, (room.Height - Height * screen.Scaling) / 2));
@@ -1269,7 +1280,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Steps to the next shape the Shape tool draws.</summary>
     private bool CycleShapeKind()
     {
-        var kinds = Enum.GetValues<ShapeKind>();
+        var kinds = Enum.GetValues<ShapeKind>().Where(kind => kind != ShapeKind.Custom).ToArray();
         var at = Array.IndexOf(kinds, _options.Shape);
         SetShapeKind(kinds[(at + 1) % kinds.Length]);
         Say($"Shape: {_options.Shape}");
@@ -3700,12 +3711,14 @@ public sealed partial class MainWindow : Window
         _gradientMenu.Items.Add(new Separator());
         _gradientMenu.Items.Add(Command("_Reversed", () => SetGradient(null, null, !_options.GradientReversed)));
         _gradientMenu.Items.Add(Command("_Background color…", SetGradientBackground));
+        _gradientMenu.Items.Add(Command("Gradient _presets…", () => _ = ChooseGradient()));
     }
 
     private void SetGradient(GradientShape? shape, bool? toBackground, bool? reversed)
     {
         if (shape is { } wanted) _options.Gradient = wanted;
         if (toBackground is { } fade) _options.GradientToBackground = fade;
+        if (toBackground is not null) _options.GradientPreset = null;
         if (reversed is { } turn) _options.GradientReversed = turn;
         Say($"Gradient: {_options.Gradient}, {(_options.GradientToBackground ? "to the background colour" : "to nothing")}" +
             (_options.GradientReversed ? ", reversed" : "") + ", opacity as the brush's");
@@ -3731,8 +3744,8 @@ public sealed partial class MainWindow : Window
     {
         if (_document is not { } document || Selected is not { } id) return;
         if (!GradientEdits.HasLine(start, end)) return;
-        var (mask, from, to, opacity, shape) = GradientPlan(document, id);
-        RequestPreview((target, layer) => GradientEdits.Fill(target, layer, mask, start, end, from, to, opacity, shape));
+        var (mask, from, to, opacity, shape, preset) = GradientPlan(document, id);
+        RequestPreview((target, layer) => GradientEdits.Fill(target, layer, mask, start, end, from, to, opacity, shape, preset));
     }
 
     /// <summary>
@@ -3740,7 +3753,7 @@ public sealed partial class MainWindow : Window
     /// between which colours, and in which shape. The same answer serves the drag's preview and the fill the
     /// drag ends up making.
     /// </summary>
-    private (bool Mask, SKColor From, SKColor To, double Opacity, GradientShape Shape) GradientPlan(
+    private (bool Mask, SKColor From, SKColor To, double Opacity, GradientShape Shape, GradientPreset? Preset) GradientPlan(
         CanvasDocument document, Guid layerID)
     {
         var mask = _options.PaintOnMask && document.Layers.FirstOrDefault(layer => layer.ID == layerID)?.Mask is not null;
@@ -3755,7 +3768,9 @@ public sealed partial class MainWindow : Window
                 (byte)Math.Clamp(Math.Round(_options.GradientBackground.Blue * 255), 0, 255))
             : new SKColor(from.Red, from.Green, from.Blue, 0);
         if (_options.GradientReversed) (from, to) = (to, from);
-        return (mask, from, to, _options.Brush.Opacity, _options.Gradient);
+        var preset = _options.GradientPreset;
+        if (_options.GradientReversed) preset = preset?.Reversed();
+        return (mask, from, to, _options.Brush.Opacity, _options.Gradient, preset);
     }
 
     /// <summary>The gradient's line has been let go: the fill is made, as one undo step.</summary>
@@ -3768,9 +3783,9 @@ public sealed partial class MainWindow : Window
             Say("Drag the line the gradient should run along");
             return;
         }
-        var (mask, from, to, opacity, shape) = GradientPlan(document, id);
+        var (mask, from, to, opacity, shape, preset) = GradientPlan(document, id);
         Edit(mask ? "Gradient Mask" : "Gradient",
-            () => GradientEdits.Fill(document, id, mask, start, end, from, to, opacity, shape));
+            () => GradientEdits.Fill(document, id, mask, start, end, from, to, opacity, shape, preset));
         Reselect(id);
         Say($"Gradient over {Math.Sqrt(Math.Pow(end.X - start.X, 2) + Math.Pow(end.Y - start.Y, 2)):0} pixels");
     }
@@ -3778,13 +3793,14 @@ public sealed partial class MainWindow : Window
     /// <summary>The shapes the Shape tool draws, and the two numbers that shape them.</summary>
     private void BuildShapeKinds()
     {
-        foreach (var kind in Enum.GetValues<ShapeKind>())
+        foreach (var kind in Enum.GetValues<ShapeKind>().Where(kind => kind != ShapeKind.Custom))
         {
             var item = Command($"_{kind}", () => SetShapeKind(kind));
             _shapeKinds.Items.Add(item);
             _shapeKindItems[kind] = item;
         }
         _shapeKinds.Items.Add(new Separator());
+        _shapeKinds.Items.Add(Command("More _shapes…", () => _ = ChooseShape()));
         _shapeKinds.Items.Add(Command("Corner _radius…", () => _ = SetShapeNumber(ShapeNumber.CornerRadius)));
         _shapeKinds.Items.Add(Command("_Line width…", () => _ = SetShapeNumber(ShapeNumber.LineWidth)));
         SetShapeKind(ShapeKind.Rectangle);
@@ -3795,6 +3811,7 @@ public sealed partial class MainWindow : Window
     private void SetShapeKind(ShapeKind kind)
     {
         _options.Shape = kind;
+        if (kind != ShapeKind.Custom) _options.CustomShape = null;
         foreach (var (which, item) in _shapeKindItems) item.IsChecked = which == kind;
         if (_optionsBar is not null) OptionsChanged();
     }
@@ -3834,6 +3851,8 @@ public sealed partial class MainWindow : Window
             Green = _options.Brush.Green,
             Blue = _options.Brush.Blue,
             CornerRadius = _options.ShapeCornerRadius,
+            PathData = _options.CustomShape?.PathData,
+            EvenOdd = _options.CustomShape?.EvenOdd == true ? true : null,
         };
         var target = box;
         if (_options.Shape == ShapeKind.Line)
@@ -4729,8 +4748,45 @@ public sealed partial class MainWindow : Window
 
     private async Task ChooseBrush()
     {
-        if (await BrushLibraryDialog.Ask(this, _options.Brush) is not { } preset) return;
-        ApplyBrushPreset(preset);
+        var original = _options.Brush;
+        var dialog = new BrushLibraryDialog(original);
+        dialog.PreviewChanged += ApplyBrushPreset;
+        await dialog.ShowDialog(this);
+        if (dialog.Result is { } preset) ApplyBrushPreset(preset);
+        else { _options.Brush = original; OptionsChanged(); }
+    }
+
+    private async Task ChooseShape()
+    {
+        var original = _options.CustomShape ?? new ShapePreset(_options.Shape.ToString(),_options.Shape);
+        var dialog = MaterialPickers.Shapes(original);
+        void Preview(ShapePreset preset) { _options.CustomShape = preset.Kind == ShapeKind.Custom ? preset : null; SetShapeKind(preset.Kind); SetTool(Tool.Shape); }
+        dialog.PreviewChanged += Preview; await dialog.ShowDialog(this);
+        Preview(dialog.Result ?? original);
+    }
+
+    private async Task ChooseGradient()
+    {
+        var original = _options.GradientPreset;
+        var from = BrushColour(); var background = BackgroundColour();
+        var foreground = new GradientPreset("Foreground", [new(0,(uint)from),new(1,(uint)(_options.GradientToBackground ? background : from.WithAlpha(0)))]);
+        var dialog = MaterialPickers.Gradients(original, foreground: foreground);
+        void Preview(GradientPreset preset) { _options.GradientPreset = ReferenceEquals(preset,foreground) ? null : preset; OptionsChanged(); }
+        dialog.PreviewChanged += Preview; await dialog.ShowDialog(this);
+        if (dialog.Result is { } preset) Preview(preset); else { _options.GradientPreset = original; OptionsChanged(); }
+    }
+
+    private async Task ChoosePatternFill()
+    {
+        if (_document is not { } document || Selected is not { } id || document.Layers.FirstOrDefault(layer=>layer.ID==id) is not { IsGroup:false, Asset:not null }) return;
+        var mask = _options.PaintOnMask; var opacity = _options.Brush.Opacity;
+        StartPreview(document,id);
+        var dialog = MaterialPickers.Patterns();
+        dialog.PreviewChanged += pattern => RequestPreview((target,layer)=>GradientEdits.FillPattern(target,layer,mask,pattern,opacity));
+        RequestPreview((target,layer)=>GradientEdits.FillPattern(target,layer,mask,MaterialPresets.Patterns[0],opacity));
+        try { await dialog.ShowDialog(this); }
+        finally { StopPreview(); }
+        if (dialog.Result is { } selected) Edit(mask ? "Pattern Mask" : "Pattern Fill",()=>GradientEdits.FillPattern(document,id,mask,selected,opacity));
     }
 
     private void ApplyBrushPreset(BrushPreset preset)
@@ -4773,6 +4829,8 @@ public sealed partial class MainWindow : Window
             Green = _options.Brush.Green,
             Blue = _options.Brush.Blue,
             CornerRadius = _options.ShapeCornerRadius,
+            PathData = _options.CustomShape?.PathData,
+            EvenOdd = _options.CustomShape?.EvenOdd == true ? true : null,
         };
         if (_options.Shape != ShapeKind.Line) return (style, box);
         // A line's layer is the box around it with room for the stroke's own thickness and its round ends.

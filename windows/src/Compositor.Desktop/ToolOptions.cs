@@ -39,10 +39,12 @@ internal sealed class ToolOptions
     public GradientShape Gradient = GradientShape.Linear;
     public bool GradientToBackground;
     public bool GradientReversed;
+    public GradientPreset? GradientPreset;
     public (double Red, double Green, double Blue) GradientBackground = (1, 1, 1);
 
     /// <summary>Which shape the Shape tool draws, and its two sizes.</summary>
     public ShapeKind Shape = ShapeKind.Rectangle;
+    public ShapePreset? CustomShape;
     public double ShapeCornerRadius;
     public double ShapeLineWidth = 4;
 }

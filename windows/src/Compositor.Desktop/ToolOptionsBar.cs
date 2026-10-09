@@ -62,6 +62,8 @@ internal sealed partial class ToolOptionsBar : Border
     /// <summary>The Type tool's text is to be edited.</summary>
     public event Action? TextAsked;
     public event Action? BrushesAsked;
+    public event Action? ShapesAsked;
+    public event Action? GradientsAsked;
 
     public ToolOptionsBar(ToolOptions options)
     {
@@ -178,7 +180,19 @@ internal sealed partial class ToolOptionsBar : Border
         _antialias.IsChecked = _options.SelectionAntialiased;
         _sampleRing.IsChecked = _options.ShowsSampleRing;
         _wandAll.SelectedIndex = _options.WandAllLayers ? 1 : 0;
-        _shapeKind.SelectedIndex = (int)_options.Shape;
+        _shapeKind.SelectedIndex = Math.Min(3,(int)_options.Shape);
+        var tip = _options.Brush.Tip;
+        var name = tip?.Name ?? (_options.Brush.Hardness == 0 ? "Soft Round" : "Hard Round");
+        _brushPreview.Show(new BrushStyle(name,tip,tip is null ? _options.Brush.Hardness : null),62,22);
+        ToolTip.SetTip(_brushes,UiText.Get("Brushes")+": "+UiText.Get(name));
+        _shapePreview.Show(_options.CustomShape ?? new ShapePreset(_options.Shape.ToString(),_options.Shape),32,18);
+        var from = new SkiaSharp.SKColor((byte)(_options.Brush.Red*255),(byte)(_options.Brush.Green*255),(byte)(_options.Brush.Blue*255));
+        var to = _options.GradientToBackground ? new SkiaSharp.SKColor((byte)(_options.GradientBackground.Red*255),(byte)(_options.GradientBackground.Green*255),(byte)(_options.GradientBackground.Blue*255)) : from.WithAlpha(0);
+        var gradient = _options.GradientPreset ?? new GradientPreset("Foreground", [new(0,(uint)from),new(1,(uint)to)]);
+        if (_options.GradientReversed) gradient=gradient.Reversed();
+        _gradientPreview.Show(gradient,62,20);
+        _gradientTo.IsEnabled = _gradientFill.IsEnabled = _options.GradientPreset is null;
+        ToolTip.SetTip(_gradients,UiText.Get("Gradient presets…")+": "+UiText.Get(gradient.Name));
         _gradientKind.SelectedIndex = (int)_options.Gradient;
         _gradientTo.SelectedIndex = _options.GradientToBackground ? 1 : 0;
         _gradientReversed.IsChecked = _options.GradientReversed;
@@ -214,6 +228,9 @@ internal sealed partial class ToolOptionsBar : Border
     internal SegmentedChoice BrushModeChoice => _brushMode;
     internal SegmentedChoice ShapeChoice => _shapeKind;
     internal Button BrushesButton => _brushes;
+    internal Button GradientsButton => _gradients;
+    internal MaterialPreview BrushPreview => _brushPreview;
+    internal MaterialPreview GradientPreview => _gradientPreview;
     internal TextBlock TitleLabel => _title;
     internal IReadOnlyList<Control> CellsFor(string name) => _named.TryGetValue(name, out var cells) ? cells : [];
 
@@ -235,7 +252,11 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly Swatch _shapeFill = new();
     private readonly Swatch _gradientFill = new();
     private readonly SegmentedChoice _brushMode = new("Paint", "Erase");
-    private readonly Button _brushes = new() { [!ContentControl.ContentProperty] = UiText.Bind("Brushes…") };
+    private readonly MaterialPreview _brushPreview = new() { Width=62,Height=22 };
+    private readonly Button _brushes = new() { Width=80,Height=26,Padding=new Thickness(5,1) };
+    private readonly MaterialPreview _shapePreview = new() { Width=32,Height=18 };
+    private readonly MaterialPreview _gradientPreview = new() { Width=62,Height=20 };
+    private readonly Button _gradients = new() { Width=80,Height=26,Padding=new Thickness(5,1) };
     private readonly SegmentedChoice _smearMode = new("Liquify", "Blur", "Smudge");
     private readonly ComboBox _maskPaint = new();
     private readonly SegmentedChoice _healMode = new("Content-Aware", "Create Texture", "Proximity Match");
@@ -247,7 +268,7 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly CheckBox _antialias = new() { [!ContentControl.ContentProperty] = UiText.Bind("Anti-alias") };
     private readonly CheckBox _sampleRing = new() { [!ContentControl.ContentProperty] = UiText.Bind("Sample Ring") };
     private readonly ComboBox _wandAll = new StableChoice();
-    private readonly SegmentedChoice _shapeKind = new("Rectangle", "Ellipse", "Line");
+    private readonly SegmentedChoice _shapeKind = new("Rectangle", "Ellipse", "Line", "More…");
     private readonly ComboBox _gradientKind = new StableChoice();
     private readonly ComboBox _gradientTo = new StableChoice();
     private readonly CheckBox _gradientReversed = new() { [!ContentControl.ContentProperty] = UiText.Bind("Reverse") };
@@ -361,6 +382,8 @@ internal sealed partial class ToolOptionsBar : Border
         _shapeKind.SelectedIndex = 0;
         _shapeKind.Changed += index =>
         {
+            if (index >= 3) return;
+            _options.CustomShape = null;
             var shape = (ShapeKind)index;
             Set(ref _options.Shape, shape);
             // The corner radius belongs to a rectangle and the width to a line, so which of the two shows
@@ -368,12 +391,15 @@ internal sealed partial class ToolOptionsBar : Border
             On("corner", shape == ShapeKind.Rectangle);
             On("linewidth", shape == ShapeKind.Line);
         };
+        _shapeKind.ButtonAt(3).Content = _shapePreview;
+        ToolTip.SetTip(_shapeKind.ButtonAt(3),UiText.Get("More shapes…"));
+        _shapeKind.ButtonAt(3).Click += (_,_) => { if (!_loading) ShapesAsked?.Invoke(); };
         _gradientKind.ItemsSource = new[] { "Linear", "Radial", "Angle", "Reflected", "Diamond" };
         _gradientKind.SelectedIndex = 0;
         _gradientKind.SelectionChanged += (_, _) => Set(ref _options.Gradient, (GradientShape)Math.Max(0, _gradientKind.SelectedIndex));
         _gradientTo.ItemsSource = new[] { "To nothing", "To the background color" };
         _gradientTo.SelectedIndex = 0;
-        _gradientTo.SelectionChanged += (_, _) => Set(ref _options.GradientToBackground, _gradientTo.SelectedIndex == 1);
+        _gradientTo.SelectionChanged += (_, _) => { if (!_loading) _options.GradientPreset=null; Set(ref _options.GradientToBackground, _gradientTo.SelectedIndex == 1); };
         _gradientReversed.IsCheckedChanged += (_, _) => Set(ref _options.GradientReversed, _gradientReversed.IsChecked == true);
 
         _cropRatio.SelectionChanged += (_, _) => CropRatioChosen?.Invoke(_cropRatio.SelectedIndex);
@@ -383,6 +409,13 @@ internal sealed partial class ToolOptionsBar : Border
         _flipV.Click += (_, _) => FlipAsked?.Invoke(false);
         _editText.Click += (_, _) => TextAsked?.Invoke();
         _brushes.Click += (_, _) => BrushesAsked?.Invoke();
+        _brushes.Content = _brushPreview;
+        _gradients.Content = _gradientPreview;
+        Avalonia.Automation.AutomationProperties.SetName(_brushes,UiText.Get("Brushes"));
+        Avalonia.Automation.AutomationProperties.SetName(_gradients,UiText.Get("Gradients"));
+        Avalonia.Automation.AutomationProperties.SetName(_shapeKind.ButtonAt(3),UiText.Get("Shapes"));
+        ToolTip.SetTip(_gradients,UiText.Get("Gradient presets…"));
+        _gradients.Click += (_,_) => GradientsAsked?.Invoke();
 
         Cell("mode", _brushMode);
         Cell("mode", _brushes);
@@ -410,6 +443,7 @@ internal sealed partial class ToolOptionsBar : Border
         Cell("wand", _contiguous);
         Cell("wand", _wandAll);
         Cell("gradient", _gradientKind);
+        Cell("gradient", _gradients);
         Cell("gradient", _gradientTo);
         Cell("gradient", _gradientFill);
         Cell("gradient", _gradientReversed);

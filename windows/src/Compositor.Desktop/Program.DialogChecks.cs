@@ -31,6 +31,10 @@ internal static partial class Program
             {
                 ("new-project", () => new NewDocumentDialog()),
                 ("brush-library", () => new BrushLibraryDialog(new BrushSettings())),
+                ("shape-materials", () => MaterialPickers.Shapes()),
+                ("gradient-materials", () => MaterialPickers.Gradients()),
+                ("pattern-materials", () => MaterialPickers.Patterns()),
+                ("color-materials", () => MaterialPickers.Colors()),
                 ("image-size", () => Make<ImageSizeDialog>(1920, 1080, 72.0, LayerSampling.HighQuality)),
                 ("canvas-size", () => Make<CanvasSizeDialog>(1920, 1080, 4)),
                 ("grid", () => new GridSettingsDialog(new LayoutGrid())),

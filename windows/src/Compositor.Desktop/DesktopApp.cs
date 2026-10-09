@@ -30,11 +30,8 @@ public sealed class DesktopApp : Application
         {
             var window = new MainWindow();
             desktop.MainWindow = window;
-            window.Opened += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                foreach (var path in desktop.Args ?? [])
-                    if (!path.StartsWith("--", StringComparison.Ordinal)) window.OpenInput(path);
-            });
+            foreach (var path in desktop.Args ?? [])
+                if (!path.StartsWith("--", StringComparison.Ordinal)) window.OpenInput(path);
         }
         base.OnFrameworkInitializationCompleted();
     }

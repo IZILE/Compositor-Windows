@@ -77,7 +77,8 @@ public sealed class ProjectSnapshot : IDisposable
     {
         var manifest = new ProjectManifest
         {
-            Version = ProjectManifest.Current,
+            // Ordinary projects retain Mac v11 interoperability. Only extended live shapes need v12.
+            Version = document.Layers.Any(layer => layer.LiveShape is { Kind: > Format.ShapeKind.Line }) ? ProjectManifest.Current : 11,
             DocumentID = document.ID,
             Width = document.Width,
             Height = document.Height,
