@@ -1,16 +1,16 @@
 {
   "version": "0.6.5",
   "platform": "Windows x64",
-  "core_tests_passed": 998,
-  "ui_assertions_passed": 3689,
+  "core_tests_passed": 1000,
+  "ui_assertions_passed": 3714,
   "bilingual_dialog_cases": 102,
-  "material_startup_assertions": 46,
+  "material_startup_assertions": 71,
   "checks": [
     {
       "name": "ui",
       "exit_code": 0,
-      "report_lines": 3689,
-      "pass_lines": 3689
+      "report_lines": 3714,
+      "pass_lines": 3714
     },
     {
       "name": "dialogs",
@@ -87,16 +87,18 @@
     {
       "name": "materials",
       "exit_code": 0,
-      "report_lines": 46,
-      "pass_lines": 46
+      "report_lines": 71,
+      "pass_lines": 71
     }
   ],
-  "exe_sha256": "a0f103138894589141283be5592e816cafb5b1f9b84bd9690718be7fc3040c6f",
-  "installer_sha256": "26e4a274a06052bf357eb4f9a303353c1d20172d24d50d297dd283b9256544b5",
+  "exe_sha256": "1b0c2ea8d8317253a7010e2cfc164e1fd15076023e85100bd7c09333d54ea9d8",
+  "installer_sha256": "f71cd625029bd03f574ffd44a0034d95e753660ea4479a6b6cf58fe292dfc840",
   "installer_first_repeat_upgrade_uninstall": "passed",
   "settings_preserved": "passed",
   "installer_destination_selectable": true,
   "new_runtime_dependencies": false,
   "trimmed_build_shipped": false,
-  "mac_physical_comparison": "not verified"
+  "mac_physical_comparison": "not verified",
+  "native_startup_render_order_checks": 3,
+  "native_startup_physical_recording": "not verified"
 }

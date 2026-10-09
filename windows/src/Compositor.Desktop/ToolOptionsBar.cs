@@ -255,7 +255,7 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly MaterialPreview _brushPreview = new() { Width=62,Height=22 };
     private readonly Button _brushes = new() { Width=80,Height=26,Padding=new Thickness(5,1) };
     private readonly MaterialPreview _shapePreview = new() { Width=32,Height=18 };
-    private readonly MaterialPreview _gradientPreview = new() { Width=62,Height=20 };
+    private readonly MaterialPreview _gradientPreview = new() { Width=62,Height=20,CornerRadius=10 };
     private readonly Button _gradients = new() { Width=80,Height=26,Padding=new Thickness(5,1) };
     private readonly SegmentedChoice _smearMode = new("Liquify", "Blur", "Smudge");
     private readonly ComboBox _maskPaint = new();
@@ -535,6 +535,7 @@ internal sealed partial class ToolOptionsBar : Border
     /// <summary>A clickable colour of the bar's own, which the window finds out about rather than owns.</summary>
     private sealed class Swatch : Button
     {
+        protected override Type StyleKeyOverride => typeof(Button);
         public Swatch()
         {
             Width = 34;

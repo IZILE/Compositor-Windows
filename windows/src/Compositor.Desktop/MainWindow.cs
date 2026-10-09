@@ -305,6 +305,7 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
+        _firstFrame = new FirstFramePresentation(this);
         Icon = AppIcon.Value;
         UiText.WireChoices(this);
         UiText.Set(this, Window.TitleProperty, "Compositor");
@@ -905,6 +906,8 @@ public sealed partial class MainWindow : Window
     /// under the taskbar and out of reach. Found by opening the real window on this machine.
     /// </summary>
     private bool _startupPrepared;
+    private readonly FirstFramePresentation _firstFrame;
+    internal FirstFramePresentation FirstFrame => _firstFrame;
     internal int StartupPreparationCount { get; private set; }
     public override void Show()
     {
@@ -912,6 +915,7 @@ public sealed partial class MainWindow : Window
         {
             _startupPrepared = true; StartupPreparationCount++;
             FitToScreen();
+            _firstFrame.Prepare();
         }
         base.Show();
     }

@@ -3,7 +3,7 @@ using SkiaSharp;
 
 namespace Compositor.Core.Document;
 
-public sealed record ShapePreset(string Name, ShapeKind Kind, string? PathData = null, bool EvenOdd = false);
+public sealed record ShapePreset(string Name, ShapeKind Kind, string? PathData = null, bool EvenOdd = false, double AspectRatio = 1);
 public sealed record GradientColorStop(double Offset, uint Color);
 public sealed record GradientPreset(string Name, GradientColorStop[] Stops)
 {

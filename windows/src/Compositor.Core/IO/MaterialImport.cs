@@ -86,7 +86,10 @@ public static class MaterialImport
             throw new InvalidDataException("The SVG coordinates exceed the supported range.");
         result.Transform(SKMatrix.CreateTranslation(-bounds.Left, -bounds.Top));
         result.Transform(SKMatrix.CreateScale(1 / bounds.Width, 1 / bounds.Height));
-        return [new ShapePreset(Path.GetFileNameWithoutExtension(path), ShapeKind.Custom, result.ToSvgPathData(), result.FillType == SKPathFillType.EvenOdd)];
+        var aspect = (double)bounds.Width / bounds.Height;
+        if (!double.IsFinite(aspect) || aspect is < .001 or > 1000)
+            throw new InvalidDataException("The SVG shape's proportions exceed the supported range.");
+        return [new ShapePreset(Path.GetFileNameWithoutExtension(path), ShapeKind.Custom, result.ToSvgPathData(), result.FillType == SKPathFillType.EvenOdd,aspect)];
 
         void Visit(XElement element, SKMatrix parent, string inheritedFill, string inheritedRule)
         {

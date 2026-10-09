@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Avalonia.LogicalTree;
 using System.Globalization;
 
 namespace Compositor.Desktop;
@@ -120,7 +121,7 @@ internal static class MacControls
 
     internal static void StyleNumericFields(Window window)
     {
-        foreach (var field in window.GetVisualDescendants().OfType<TextBox>())
+        foreach (var field in window.GetLogicalDescendants().Concat(window.GetVisualDescendants()).OfType<TextBox>().Distinct())
         {
             if (field.AcceptsReturn || field.Classes.Contains("text-input")) continue;
             if (!field.Classes.Contains("numeric") && !(double.TryParse(field.Text, NumberStyles.Float,

@@ -30,8 +30,9 @@ public sealed class DesktopApp : Application
         {
             var window = new MainWindow();
             desktop.MainWindow = window;
-            foreach (var path in desktop.Args ?? [])
-                if (!path.StartsWith("--", StringComparison.Ordinal)) window.OpenInput(path);
+            if (desktop.Args is ["--startup-native",var output]) StartupNativeCheck.Run(window,output,desktop);
+            else foreach (var path in desktop.Args ?? [])
+                    if (!path.StartsWith("--", StringComparison.Ordinal)) window.OpenInput(path);
         }
         base.OnFrameworkInitializationCompleted();
     }

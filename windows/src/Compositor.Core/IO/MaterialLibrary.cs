@@ -45,7 +45,8 @@ public static class MaterialLibrary
     }
     private static bool ValidShape(ShapePreset shape)
     {
-        if (shape.Name is not { Length: > 0 and <= 256 } || !Enum.IsDefined(shape.Kind)) return false;
+        if (shape.Name is not { Length: > 0 and <= 256 } || !Enum.IsDefined(shape.Kind)
+            || !double.IsFinite(shape.AspectRatio) || shape.AspectRatio is < .001 or > 1000) return false;
         if (shape.Kind != ShapeKind.Custom) return shape.PathData is null;
         if (shape.PathData is not { Length: > 0 and <= 2 * 1024 * 1024 }) return false;
         using var path = SKPath.ParseSvgPathData(shape.PathData);

@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Compositor.Core.Document;
 using Compositor.Core.Format;
 using Compositor.Core.IO;
@@ -29,6 +30,7 @@ public sealed partial class MainWindow
     }
     private void MaterialControlsSelfCheck(string output,List<string> report)
     {
+        MaterialPreviewChecks.Run(report);
         void Check(bool good,string name) { if(!good) throw new InvalidOperationException("MATERIAL UI FAILED: "+name); report.Add("PASS: "+name); }
         void Layout(Window? window=null) { (window??this).UpdateLayout(); Dispatcher.UIThread.RunJobs(); }
         void Click(Control control)
@@ -93,12 +95,17 @@ public sealed partial class MainWindow
             Check(_document.Layers.Count==count+1 && _document.Layers.First(l=>l.ID==Selected).LiveShape?.PathData is not null,"drawing the SVG commits editable vector metadata");
             Undo(); Check(_document.Layers.Count==count,"SVG drawing remains one undo step");
             SetTool(Tool.Gradient); Layout(); var previous=_options.GradientPreset;
+            foreach(var choice in _optionsBar.GetVisualDescendants().OfType<StableChoice>().Where(c=>c.IsVisible))
+                Check(choice.Template is not null && choice.ItemTemplate is not null
+                    && choice.GetVisualDescendants().OfType<TextBlock>().Any(t=>t.Text==UiText.Get(choice.SelectedItem?.ToString()??"") && t.Bounds.Width>0),
+                    "derived tool choices inherit their theme and render localized selected text instead of an empty gap");
             Click(_optionsBar.GradientsButton); var gradients=OwnedWindows.OfType<MaterialPickerDialog<GradientPreset>>().Single();
             var ggr=Path.Combine(output,"import-gradient.ggr"); File.WriteAllText(ggr,"GIMP Gradient\nName: Imported\n1\n0 .3 1 1 0 0 1 0 0 1 1 0 0\n");
             Wait(gradients.ImportFiles([ggr])); Layout(gradients);
             Check(_options.GradientPreset?.Name=="Imported" && _optionsBar.GradientPreview.Item is GradientPreset {Name:"Imported"},"GGR selection updates the toolbar's actual gradient preview");
             Capture(gradients,"gradient-materials-zh-CN"); Click(gradients.CancelButton);
             Check(_options.GradientPreset==previous,"Cancel restores the previous gradient preset");
+            Capture(this,"gradient-toolbar-zh-CN");
             var selected=_document.Layers.First(l=>l.ID==Selected); var asset=selected.Asset;
             var fill=ChoosePatternFill(); var patterns=OwnedWindows.OfType<MaterialPickerDialog<PatternPreset>>().Single();
             var tilePath=Path.Combine(output,"import-pattern.png");

@@ -8,6 +8,7 @@ namespace Compositor.Desktop;
 /// <summary>Reserve the natural width of alternate captions using the current font and language.</summary>
 internal sealed class StableCaption : TextBlock
 {
+    protected override Type StyleKeyOverride => typeof(TextBlock);
     private string[] _variants = [];
     internal string[] Variants
     {
@@ -24,6 +25,7 @@ internal sealed class StableCaption : TextBlock
 
 internal sealed class StableCaptionButton : Button
 {
+    protected override Type StyleKeyOverride => typeof(Button);
     internal Func<IEnumerable<string>>? AlternateCaptions { get; init; }
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -35,6 +37,7 @@ internal sealed class StableCaptionButton : Button
 
 internal sealed class StableChoice : ComboBox
 {
+    protected override Type StyleKeyOverride => typeof(ComboBox);
     protected override Size MeasureOverride(Size availableSize)
     {
         var measured = base.MeasureOverride(availableSize);

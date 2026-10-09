@@ -1,0 +1,19 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 11B：预览比例与窗口首帧
+rectangle "已完成\n形状保持比例、居中显示\nSVG 保存原比例，相关缩略图统一缩放" as shapes #DDF2DF
+rectangle "已完成\n渐变条圆角与透明棋盘底色\n恢复派生下拉框及中文显示" as swatch #DDF2DF
+rectangle "已完成\n样式提前到显示前\n首帧绘制完成后呈现窗口" as startup #DDF2DF
+rectangle "已完成\n1000 核心测试 · 14 组最终程序检查\n3 次原生首帧顺序检查" as tests #DDF2DF
+rectangle "已完成\n覆盖安装、目录可选\n保留桌面入口和已有设置" as install #DDF2DF
+rectangle "当前\n更新仓库来源与说明\n发布 0.6.5 并确认云端构建" as delivery #FFF0BB
+rectangle "后续待完成\nMac 实机逐帧、物理 DPI 与更多显卡\n剩余 Mac 功能和复杂画布性能" as pending #E7E9ED
+shapes --> swatch
+swatch --> startup
+startup --> tests
+tests --> install
+install --> delivery
+delivery --> pending
+@enduml

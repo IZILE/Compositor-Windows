@@ -1,36 +1,41 @@
 # Compositor Windows
 
-轻量的 Windows 图像编辑器，支持图层合成、绘画和照片编辑。保留 Windows 窗口与快捷键操作，应用内界面和动效持续参考 Mac 原版，中英文可切换。
+## 原作与来源
 
-**[下载最新版安装包](https://github.com/IZILE/Compositor-Windows/releases/latest/download/Compositor-Setup.exe)** · [更新记录](https://github.com/IZILE/Compositor-Windows/releases) · [问题反馈](https://github.com/IZILE/Compositor-Windows/issues)
+本项目是 [robbietilton/Compositor](https://github.com/robbietilton/Compositor) 的独立 Windows 社区移植，基于 [chenguisen 的 C# Windows 移植](https://github.com/chenguisen/Compositor/tree/compositor_win) 继续开发。原作是一款面向图层合成、绘画与照片编辑的 macOS 图像编辑器。本项目保留原作及社区贡献者的版权和 [MIT 许可](LICENSE)。
 
-安装目录可选，默认位于 C 盘当前用户的程序目录；升级覆盖原位置，保留设置和工程，无需另装 .NET。
+Windows 版本提供中英文界面，保留 Windows 窗口按钮、文件操作和 Ctrl 快捷键，支持可编辑的 `.comp` 工程。
+
+## 下载与安装
+
+**[下载最新版安装包](https://github.com/IZILE/Compositor-Windows/releases/latest/download/Compositor-Setup.exe)** · [所有版本](https://github.com/IZILE/Compositor-Windows/releases) · [问题反馈](https://github.com/IZILE/Compositor-Windows/issues)
+
+适用于 Windows 10/11 x64，无需另外安装 .NET。安装向导可选择目录，默认位于 C 盘当前用户程序目录；升级沿用原位置，保留设置。安装后使用桌面或开始菜单快捷方式启动。
+
+在 **帮助 → 语言** 中切换中文或 English。笔刷大小可拖动滑条、输入数值，或使用 `[` / `]` 调节。更多操作见[安装与使用说明](windows/INSTALLING.md)。
+
+## 主要功能
+
+- 图层、分组、混合模式、蒙版、选区、文字与变换。
+- 绘画、擦除、图章、修复、模糊、涂抹、液化、渐变和常用照片滤镜。
+- 14 种笔刷、18 种可编辑形状、12 组渐变、10 种图案、36 个色板颜色。
+- 支持 ABR/PNG 笔刷、SVG 形状、GGR 渐变、图片图案和 GPL 色板导入；素材选择可即时预览，取消可还原。
+- `.comp` 工程保存，以及 PSD/PSB 导入和 PNG/PSD 导出。
 
 ## 界面预览
 
-以下为 **0.6.5 当前应用界面**，随版本更新。
+以下画面来自 **0.6.5 当前应用界面的自动渲染**，随版本更新。
 
 ![Compositor Windows 中文编辑界面](docs/previews/editor.png)
 
-点击样式即可查看效果，选中背景连续移动：
+![形状选择与实时预览](docs/previews/materials.gif)
 
-![形状选择与实时预览动图](docs/previews/materials.gif)
+![笔刷样式与笔画预览](docs/previews/brushes.png)
 
-笔刷直接显示样式，支持预览后选择和导入：
+## 开发与兼容性
 
-![笔刷样式与实际笔画预览](docs/previews/brushes.png)
+使用 .NET 10 和 Avalonia。见[构建说明](docs/BUILDING.md)、[工程格式](docs/project-format.md)及[功能对照与已知差异](docs/mac-parity-checklist.md)。
 
-## 能做什么
+Mac 原版功能仍在持续移植。普通工程保持格式 11；扩展可编辑形状使用 Windows 格式 12，旧 Mac 版本需使用 PNG/PSD 导出。ABR 当前支持静态采样笔尖，SVG 支持填充轮廓，GGR 支持固定线性 RGB 分段。
 
-- 图层、蒙版、选区、文字、变换和常用滤镜，可编辑的 `.comp` 工程。
-- 绘画、擦除、图章、修复、模糊、涂抹和液化；大小滑条与精确数值输入并存。
-- 14 种笔刷、18 种形状、12 组渐变、10 种图案、36 个色板颜色；支持 ABR/PNG、SVG、GGR、图片图案和 GPL 导入。
-- 素材切换即时预览，取消还原；图案可在画布预览后填充，并支持撤销。
-
-## 使用与开发
-
-双击桌面快捷方式启动。**帮助 → 语言**切换中文或 English；使用 Ctrl 快捷键，笔刷大小也可用 `[` / `]` 调节。
-
-[安装与升级](windows/INSTALLING.md) · [构建说明](docs/BUILDING.md) · [已知差异](docs/mac-parity-checklist.md) · [本次验证](docs/11a-materials-preview.md)
-
-独立社区移植，基于 [Compositor 原作](https://github.com/robbietilton/Compositor) 和 [chenguisen 的 C# 移植](https://github.com/chenguisen/Compositor/tree/compositor_win)，遵循 [MIT 许可](LICENSE)。当前仍有未移植的 Mac 功能；ABR 导入静态笔尖，SVG 导入填充轮廓，GGR 支持固定线性 RGB 分段。扩展可编辑形状使用 Windows 格式 12，旧 Mac 版本请使用 PNG/PSD 导出。
+依赖及素材格式参考的许可保存在 [windows/licenses](windows/licenses)。版本变更与验证记录见 [Releases](https://github.com/IZILE/Compositor-Windows/releases)。

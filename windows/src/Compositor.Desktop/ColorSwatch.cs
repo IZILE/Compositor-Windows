@@ -12,6 +12,7 @@ namespace Compositor.Desktop;
 /// </summary>
 internal sealed class ColorSwatch : Button
 {
+    protected override Type StyleKeyOverride => typeof(Button);
     /// <summary>The width of a swatch, which is the Mac sheet's 24 points.</summary>
     private const double Side = 24;
 

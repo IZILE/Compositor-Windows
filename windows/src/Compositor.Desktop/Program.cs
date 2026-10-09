@@ -146,8 +146,7 @@ internal static partial class Program
         // `--dialogs` draws a few dialog bodies under the real theme, which is the only way to look at their
         // colours: what a control's text and fill resolve to is the theme's business, not the dialog's.
         if (args is ["--dialogs", var dialogOutput]) return Dialogs(dialogOutput);
-        Build().StartWithClassicDesktopLifetime(args);
-        return 0;
+        return Build().StartWithClassicDesktopLifetime(args);
     }
 
     /// <summary>

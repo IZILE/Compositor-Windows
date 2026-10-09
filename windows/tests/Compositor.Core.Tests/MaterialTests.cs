@@ -53,6 +53,24 @@ public sealed class MaterialTests : IDisposable
         var preset=MaterialImport.Shapes(File("inherit.svg","<svg fill=\"none\"><rect fill=\"red\" width=\"10\" height=\"10\"/></svg>"));
         Assert.Single(preset);
     }
+    [Fact]
+    public void SvgPresetKeepsItsIntrinsicAspectThroughTheMaterialLibrary()
+    {
+        var preset = Assert.Single(MaterialImport.Shapes(File("wide.svg","<svg><rect width=\"80\" height=\"20\"/></svg>")));
+        Assert.Equal(4,preset.AspectRatio);
+        var library = Path.Combine(_root,"shapes.json"); MaterialLibrary.Save(library,new[] {preset});
+        Assert.Equal(preset,Assert.Single(MaterialLibrary.Load<ShapePreset>(library)));
+        System.IO.File.WriteAllText(library,"{\"Version\":1,\"Items\":[{\"Name\":\"Old\",\"Kind\":0}]}");
+        Assert.Equal(1,Assert.Single(MaterialLibrary.Load<ShapePreset>(library)).AspectRatio);
+    }
+    [Fact]
+    public void InvalidShapeProportionsCannotOverwriteTheMaterialLibrary()
+    {
+        var library = Path.Combine(_root,"shapes.json"); MaterialLibrary.Save(library,new[] {MaterialPresets.Shapes[0]});
+        var before = System.IO.File.ReadAllBytes(library);
+        Assert.Throws<InvalidDataException>(()=>MaterialLibrary.Save(library,new[] {MaterialPresets.Shapes[0] with {AspectRatio=0}}));
+        Assert.Equal(before,System.IO.File.ReadAllBytes(library));
+    }
     [Theory]
     [InlineData("<svg><text>text</text></svg>")]
     [InlineData("<svg><path stroke=\"red\" d=\"M0 0H10V10Z\"/></svg>")]

@@ -4,53 +4,53 @@
   "results": [
     {
       "name": "overlay-redraw",
-      "median_ms": 2.3142,
-      "p95_ms": 3.0609
+      "median_ms": 2.3129,
+      "p95_ms": 2.7519
     },
     {
       "name": "pan",
-      "median_ms": 2.3235,
-      "p95_ms": 3.7531
+      "median_ms": 2.432,
+      "p95_ms": 3.7663
     },
     {
       "name": "zoom",
-      "median_ms": 2.4406,
-      "p95_ms": 2.6715
+      "median_ms": 2.4937,
+      "p95_ms": 3.0323
     },
     {
       "name": "layer-opacity",
-      "median_ms": 42.7032,
-      "p95_ms": 46.517
+      "median_ms": 43.3939,
+      "p95_ms": 48.0744
     },
     {
       "name": "layer-transform",
-      "median_ms": 45.3697,
-      "p95_ms": 47.0982
+      "median_ms": 44.1767,
+      "p95_ms": 46.9423
     },
     {
       "name": "marquee-draft",
-      "median_ms": 2.4828,
-      "p95_ms": 2.7483
+      "median_ms": 2.4014,
+      "p95_ms": 2.5811
     },
     {
       "name": "lasso-draft-4096",
-      "median_ms": 4.1574,
-      "p95_ms": 6.6503
+      "median_ms": 4.1034,
+      "p95_ms": 7.2393
     },
     {
       "name": "gradient-line",
-      "median_ms": 2.4491,
-      "p95_ms": 2.6537
+      "median_ms": 2.4544,
+      "p95_ms": 3.0164
     },
     {
       "name": "shape-preview-repeated",
-      "median_ms": 3.4338,
-      "p95_ms": 4.6903
+      "median_ms": 3.4159,
+      "p95_ms": 6.9717
     },
     {
       "name": "shape-preview-resize",
-      "median_ms": 6.7962,
-      "p95_ms": 7.1742
+      "median_ms": 6.6175,
+      "p95_ms": 7.396
     }
   ]
 }

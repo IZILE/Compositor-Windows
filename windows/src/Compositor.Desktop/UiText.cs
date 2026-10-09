@@ -48,7 +48,14 @@ internal static class UiText
 
     public static void WireChoices(Window window)
     {
-        window.Opened += (_, _) =>
+        // Window initialization can precede the derived constructor's content. Content assignment is
+        // still before Show and layout, so translated templates and numeric styling are ready for frame one.
+        window.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == ContentControl.ContentProperty) Prepare();
+        };
+        if (window.Content is not null) Prepare();
+        void Prepare()
         {
             MacControls.StyleNumericFields(window);
             foreach (var box in window.GetLogicalDescendants().OfType<ComboBox>())
@@ -59,7 +66,7 @@ internal static class UiText
                     [!TextBlock.TextProperty] = Bind(value?.ToString() ?? ""),
                 });
             }
-        };
+        }
     }
 
     private sealed class Translation(string source) : IObservable<string>

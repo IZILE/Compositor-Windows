@@ -4,26 +4,26 @@
   "results": [
     {
       "name": "Clone",
-      "median_ms": 163.1114,
-      "worst_ms": 198.7544,
+      "median_ms": 166.1786,
+      "worst_ms": 200.2521,
       "pixel_sha256": "ccf1f624ebaa7b8652e160cc21671e09b6fc680c80a8edaf041272a766e2190b"
     },
     {
       "name": "Blur",
-      "median_ms": 294.175,
-      "worst_ms": 296.1001,
+      "median_ms": 287.3595,
+      "worst_ms": 288.735,
       "pixel_sha256": "5a497e8f0437075c800942bb3f478378ca6fd5ba68c4efa4a440403b7d0a8089"
     },
     {
       "name": "Liquify",
-      "median_ms": 151.1261,
-      "worst_ms": 155.7333,
+      "median_ms": 145.8096,
+      "worst_ms": 151.8007,
       "pixel_sha256": "2cec7a52ef65a7b4d264794d28d42384658f0b92c6956ec1c05440faf8f06438"
     },
     {
       "name": "Smudge",
-      "median_ms": 50.3603,
-      "worst_ms": 50.9508,
+      "median_ms": 50.7878,
+      "worst_ms": 53.1428,
       "pixel_sha256": "50909ad07b0f07cf6dea9814b1a26fd8419aaae4404839c03acf7d65133fcdb2"
     }
   ]
