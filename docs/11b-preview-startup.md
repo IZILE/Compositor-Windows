@@ -12,9 +12,9 @@
 
 仓库首页保留功能、安装、预览和构建说明，将原作与社区移植来源放在最前；具体动画和 UI 修复记录留在版本报告中。
 
-![修正后的形状预览](previews-0.6.5/shapes.png)
+![修正后的形状预览](previews/shapes.png)
 
-![修正后的渐变工具栏](previews-0.6.5/gradient.png)
+![修正后的渐变工具栏](previews/gradient.png)
 
 ![阶段进度](11b-preview-startup.png)
 

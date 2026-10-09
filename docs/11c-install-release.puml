@@ -1,0 +1,17 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 11C：安装、公开发布与独立验证
+rectangle "已完成\n形状按比例预览 · 渐变圆角与透明底色\n素材导入、切换预览和取消还原" as feature #DDF2DF
+rectangle "已完成\n1000 核心测试 · 14 组最终 EXE 检查\n双语布局与原生首帧顺序检查" as local #DDF2DF
+rectangle "已完成\n覆盖到原安装目录\n目录可选，桌面入口与设置保留" as install #DDF2DF
+rectangle "已完成\n原作与来源前置，恢复常规说明\n0.6.5 源码、安装包与校验文件已公开" as release #DDF2DF
+rectangle "已完成\n独立 Windows 云端构建成功\n1000 核心测试与 14 组程序检查通过" as cloud #DDF2DF
+rectangle "后续待完成\nMac 实机动画与物理 DPI/显卡对照\n剩余 Mac 功能及复杂画布计算优化" as remaining #E7E9ED
+feature --> local
+local --> install
+install --> release
+release --> cloud
+cloud --> remaining
+@enduml
