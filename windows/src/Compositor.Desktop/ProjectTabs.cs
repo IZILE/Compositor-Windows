@@ -68,7 +68,7 @@ internal sealed class ProjectTabs : Panel
         {
             if (!_pills.TryGetValue(entry.ID, out var pill))
             {
-                var name = new Button { Classes = { "plain" }, Height = 28, Padding = new Thickness(11, 0, 8, 0),
+                var name = new Button { Classes = { "plain", "selection-item" }, Height = 28, Padding = new Thickness(11, 0, 8, 0),
                     HorizontalContentAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(14, 0, 0, 14) };
                 var close = new Button { Classes = { "plain" }, Content = "×", FontSize = 11,
                     Width = 21, Height = 28, Foreground = Skin.SecondaryBrush, Padding = new Thickness(0, 0, 5, 0),
@@ -97,9 +97,13 @@ internal sealed class ProjectTabs : Panel
                 Children.Add(pill);
             }
             var controls = ((Grid)pill.Child!).Children.OfType<Button>().ToArray();
-            controls[0].Content = new TextBlock { Text = (entry.Dirty ? "• " : "") + entry.Title,
-                TextTrimming = TextTrimming.CharacterEllipsis, FontSize = 12,
-                FontWeight = entry.Selected ? FontWeight.SemiBold : FontWeight.Medium };
+            if (controls[0].Content is not TextBlock label)
+            {
+                label = new TextBlock { TextTrimming = TextTrimming.CharacterEllipsis, FontSize = 12 };
+                controls[0].Content = label;
+            }
+            label.Text = (entry.Dirty ? "• " : "") + entry.Title;
+            label.FontWeight = entry.Selected ? FontWeight.SemiBold : FontWeight.Medium;
             ToolTip.SetTip(controls[0], entry.Title);
             ToolTip.SetTip(controls[1], UiText.Format("Close {0}", entry.Title));
         }

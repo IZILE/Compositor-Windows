@@ -17,7 +17,7 @@
 
   <PropertyGroup>
     <!-- This independent Windows build has its own version and update channel. -->
-    <Version>0.6.1</Version>
+    <Version>0.6.2</Version>
     <AssemblyName>Compositor</AssemblyName>
     <Product>Compositor Windows Community</Product>
     <Description>Independent Windows image editor based on the Compositor community port.</Description>

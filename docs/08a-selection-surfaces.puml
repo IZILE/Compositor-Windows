@@ -1,0 +1,24 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+title 阶段 08a：单层选中背景
+rectangle "已完成\n复现悬停与选中底色叠加\n复现标签文字重建使悬停丢失" as cause #254B3D
+rectangle "已完成\n工具／分段／标签共用单层选中底板\n图标明暗平滑反馈，标签文字复用" as fix #254B3D
+rectangle "已完成\n24 项新断言 + 原有动画检查\n十一组最终程序检查 + 887 项核心测试" as check #254B3D
+rectangle "已完成\n0.6.2 原位置覆盖安装\n保留快捷方式、工程与设置" as install #254B3D
+rectangle "当前\n公开源码及 Release\n独立 Windows 云端验证" as publish #4A4230
+rectangle "待完成\n实机 DPI／刷新率与 Mac 逐帧比较\n复杂计算与剩余 Mac 功能" as pending #393B42
+cause --> fix
+fix --> check
+check --> install
+install --> publish
+publish --> pending
+@enduml

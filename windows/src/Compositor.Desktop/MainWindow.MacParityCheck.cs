@@ -86,12 +86,15 @@ public sealed partial class MainWindow
             Capture("brush-erase.png");
             var button = mode.ButtonAt(0);
             var feedback = button.GetVisualDescendants().OfType<Border>().Single(border => border.Name == "feedback");
+            var label = button.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>()
+                .Single(item => item.Name == "PART_ContentPresenter");
             var pressed = Middle(button);
-            Frames(feedback, () => this.MouseDown(pressed, MouseButton.Left, RawInputModifiers.LeftMouseButton),
-                () => feedback.Opacity, "button-press-motion", 80);
-            Check(feedback.Opacity > 0.15, "button press reaches its tinted state without shifting its bounds");
-            Frames(feedback, () => this.MouseUp(pressed, MouseButton.Left, RawInputModifiers.None),
-                () => feedback.Opacity, "button-release-motion", 80);
+            Frames(label, () => this.MouseDown(pressed, MouseButton.Left, RawInputModifiers.LeftMouseButton),
+                () => label.Opacity, "button-press-motion", 80);
+            Check(label.Opacity < 0.69 && !feedback.IsVisible,
+                "selection button press tints only its content without an overlapping background");
+            Frames(label, () => this.MouseUp(pressed, MouseButton.Left, RawInputModifiers.None),
+                () => label.Opacity, "button-release-motion", 80);
 
             _history.Reset();
             var opacityBefore = document.Layers.Single(layer => layer.ID == targetID).Opacity;

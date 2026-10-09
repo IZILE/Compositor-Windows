@@ -149,7 +149,7 @@ internal sealed class ToolRail : Grid
                 BorderBrush = Brushes.Transparent,
                 CornerRadius = new CornerRadius(7),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Classes = { "plain" },
+                Classes = { "plain", "selection-item" },
             };
             UiText.Set(button, ToolTip.TipProperty, Names[tool]);
             var picked = tool;

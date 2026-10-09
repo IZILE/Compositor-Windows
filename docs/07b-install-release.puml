@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+left to right direction
+rectangle "已完成\n快速动画往返修复\n窗口及桌面图标修正" as fix #254B3D
+rectangle "已完成\n本地最终程序与安装检查\n设置和固定快捷方式保留" as local #254B3D
+rectangle "已完成\nGitHub 公开发布\n独立 Windows 云端检查成功" as release #254B3D
+rectangle "当前交付\n0.6.1 已覆盖安装\n桌面快捷方式可直接打开" as current #4A4230
+rectangle "待完成\n实机 DPI／刷新率对照\n复杂计算与剩余 Mac 功能" as pending #393B42
+fix --> local
+local --> release
+release --> current
+current --> pending
+@enduml

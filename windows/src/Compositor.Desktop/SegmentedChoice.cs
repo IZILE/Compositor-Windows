@@ -24,7 +24,7 @@ internal sealed class SegmentedChoice : Border
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
         _buttons = choices.Select((name, index) =>
         {
-            var button = new Button { Classes = { "plain" }, Padding = new Thickness(8, 0),
+            var button = new Button { Classes = { "plain", "selection-item" }, Padding = new Thickness(8, 0),
                 MinHeight = 24, Height = 24, CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
                 Content = new TextBlock { [!TextBlock.TextProperty] = UiText.Bind(name) } };
             button.Click += (_, _) => { if (_selected == index) return; SelectedIndex = index; Changed?.Invoke(index); };

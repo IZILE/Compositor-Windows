@@ -1,4 +1,4 @@
-# Compositor Windows community build 0.6.0
+# Compositor Windows community build 0.6.2
 
 This independent Windows build starts from the C# / Avalonia community port by chenguisen,
 branch `compositor_win`, commit `c51be1e57d699edce857115f43bbca579f18dcd4`.
@@ -165,6 +165,18 @@ diagnostic checks the actual Win32 loader at 16 through 64 pixels. The EXE and s
 15 sizes through 256 pixels; the artwork body fills more of the larger canvases while retaining the
 original gradient and soft shadow. Installation sends targeted Shell item-change notifications for
 the updated icon and shortcuts. Different physical DPI settings still need desktop comparison.
+
+## 0.6.2 selection and hover handoff
+
+The original Mac tool rail uses plain buttons with a selected background. The Windows shared Button
+theme also painted a stationary hover/pressed overlay above the moving selection. These independent
+surfaces made the selected background brighten during handoff even with continuous coordinates.
+Tool buttons, tab selection buttons and segmented choices now use the selection-item style: only
+the shared selection paints a background, while content opacity eases for hover and press. Tab close
+buttons and other independent action controls retain their ordinary feedback. Pixel regressions check
+both selected and unselected backgrounds, in addition to geometry, press feedback and operating logic.
+Tab updates also reuse the existing text control: replacing it on selection briefly invalidated pointer
+hover, interrupting the release feedback even though the selection surface itself remained continuous.
 
 ## Limits
 

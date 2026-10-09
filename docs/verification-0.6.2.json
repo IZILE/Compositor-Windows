@@ -1,0 +1,91 @@
+{
+  "version": "0.6.2",
+  "platform": "Windows x64",
+  "core_tests_passed": 887,
+  "ui_assertions_passed": 2229,
+  "dialog_cases_en_zh": 92,
+  "published_checks": [
+    {
+      "name": "ui",
+      "exit_code": 0,
+      "report_lines": 2229,
+      "pass_lines": 2229
+    },
+    {
+      "name": "dialogs",
+      "exit_code": 0,
+      "report_lines": 93,
+      "pass_lines": 93
+    },
+    {
+      "name": "windows-en",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "windows-zh",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "lifecycle",
+      "exit_code": 0,
+      "report_lines": 26,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-en",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-zh",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "shortcuts",
+      "exit_code": 0,
+      "report_lines": 117,
+      "pass_lines": 0
+    },
+    {
+      "name": "camera-raw",
+      "exit_code": 0,
+      "report_lines": 14,
+      "pass_lines": 0
+    },
+    {
+      "name": "performance",
+      "exit_code": 0,
+      "report_lines": 18,
+      "pass_lines": 13
+    },
+    {
+      "name": "native-icons",
+      "exit_code": 0,
+      "report_lines": 21,
+      "pass_lines": 21
+    }
+  ],
+  "selection_surface_assertions": 24,
+  "selection_motion_assertions": 114,
+  "selection_motion_ms": 160,
+  "content_feedback_ms": 80,
+  "single_selection_backplate": true,
+  "persistent_tab_label": true,
+  "installer_first_repeat_upgrade_uninstall": "passed",
+  "settings_preserved": "passed",
+  "trimmed_build_shipped": false,
+  "exe_sha256": "dfc3e0d3f81d279f8b9a549d57958559767ba44553daea030855f54322b76939",
+  "installer_sha256": "988bbb597631ffc404ecb836ba0373c6fd78918afd061852d8628a41a509c465",
+  "limits": [
+    "No live Mac frame-time comparison",
+    "No multi-DPI physical desktop audit",
+    "No comprehensive large-document performance benchmark"
+  ]
+}
