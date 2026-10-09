@@ -60,8 +60,27 @@ internal static class MenuMotionChecks
                 var hoverPoint = last.TranslatePoint(new Point(last.Bounds.Width / 2, last.Bounds.Height / 2), popupRoot)!.Value;
                 popupRoot.MouseMove(hoverPoint, RawInputModifiers.None); Layout(); clock.Pulse(0); clock.Pulse(160); Layout();
                 Check(ReferenceEquals(panel.Highlighted, last), "real pointer hover moves the menu's shared highlight");
+                var firstPoint = first.TranslatePoint(new Point(first.Bounds.Width / 2, first.Bounds.Height / 2), popupRoot)!.Value;
+                var trace = new List<string>();
+                var time = 160;
+                foreach (var forward in new[] { false, true, false })
+                {
+                    var start = forward ? firstPoint.Y : hoverPoint.Y;
+                    var finish = forward ? hoverPoint.Y : firstPoint.Y;
+                    for (var y = start; forward ? y <= finish : y >= finish; y += forward ? 1 : -1)
+                    {
+                        popupRoot.MouseMove(new Point(firstPoint.X, y), RawInputModifiers.None); Layout();
+                        clock.Pulse(time += 4); Layout();
+                        trace.Add($"{time},{y:0.00},{panel.HighlightBounds.Y:0.000},{panel.HighlightAlpha:0.000},{panel.Highlighted?.Header}");
+                        if (panel.HighlightAlpha <= 0.999)
+                            System.IO.File.WriteAllLines(System.IO.Path.Combine(output, "menu-pointer-sweep.csv"), trace);
+                        Check(panel.HighlightAlpha > 0.999,
+                            $"dense pointer sweep through rows, gaps and separators keeps one opaque highlight at y={y:0.0}");
+                    }
+                }
+                System.IO.File.WriteAllLines(System.IO.Path.Combine(output, "menu-pointer-sweep.csv"), trace);
                 popupRoot.MouseMove(new Point(-5, -5), RawInputModifiers.None); first.IsSelected = true; last.IsSelected = false; Layout();
-                clock.Pulse(160); clock.Pulse(320); Layout();
+                clock.Pulse(time); clock.Pulse(time + 160); Layout();
             }
             using (var clock = new UiAnimationClock(panel))
             {

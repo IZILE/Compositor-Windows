@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+title 阶段 09a：修复与最终程序验证
+rectangle "已完成：复现问题\n标题推移／菜单空隙闪烁\n长笔画重复计算与预览" as reproduce #254B3D
+rectangle "已完成：修复并核对\n稳定工具栏／连续菜单背景\n增量笔画／形状复用／套索路径" as repair #254B3D
+rectangle "已完成：验证\n900 项核心测试／最终 EXE 十二组检查\n八组最终像素与修改前完全一致" as verify #254B3D
+rectangle "当前：准备 0.6.3 交付\n安装和覆盖／公开源码与附件\n独立 Windows 构建" as current #4A4230
+rectangle "待完成\n复杂图层合成与大图性能\n完整 Mac 功能及实机动画／DPI 对照" as pending #393B42
+reproduce -down-> repair
+repair -down-> verify
+verify -down-> current
+current -down-> pending
+@enduml

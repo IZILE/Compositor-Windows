@@ -1,0 +1,24 @@
+{
+  "version": "0.6.2",
+  "run_id": 37933897929,
+  "job_id": 113831043751,
+  "run_url": "https://github.com/IZILE/Compositor-Windows/actions/runs/37933897929",
+  "source_commit": "2cd9b79401e118ea934feb20ae6269a98b6261a1",
+  "status": "completed",
+  "conclusion": "success",
+  "core_tests_passed": 887,
+  "published_checks": [
+    "ui",
+    "dialogs",
+    "windows-en",
+    "windows-zh",
+    "lifecycle",
+    "clicks-en",
+    "clicks-zh",
+    "shortcuts",
+    "camera-raw",
+    "performance",
+    "native-icons"
+  ],
+  "immutable_release_assets_preserved": true
+}

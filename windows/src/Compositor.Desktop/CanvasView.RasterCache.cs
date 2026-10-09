@@ -15,6 +15,8 @@ public sealed partial class CanvasView
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs args)
     {
         _rasterCache.Clear();
+        CancelStroke();
+        ForgetShapePreview();
         base.OnDetachedFromVisualTree(args);
     }
 

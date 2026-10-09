@@ -1,0 +1,77 @@
+{
+  "document": "2048x1536, one raster layer, 1024-point 18-radian path",
+  "renderer": "Avalonia headless / real Skia CPU; no physical presentation timing",
+  "results": [
+    {
+      "name": "paint-40-hard",
+      "apply_median_ms": 2310.6166,
+      "apply_worst_ms": 2314.8415,
+      "history_median_ms": 0.0604,
+      "pixel_sha256": "cf2533aa25224e6cfcecd586e7a6528a5f789f029d46e2b9dafa2d9f0b4ea330"
+    },
+    {
+      "name": "erase-40-hard",
+      "apply_median_ms": 2313.3622,
+      "apply_worst_ms": 2317.856,
+      "history_median_ms": 0.0556,
+      "pixel_sha256": "06fd2ac048d8ccdc7fde687eb9306eb3330c86d402305b3fea7881e691e51651"
+    },
+    {
+      "name": "paint-40-soft",
+      "apply_median_ms": 1674.1503,
+      "apply_worst_ms": 1682.503,
+      "history_median_ms": 0.0402,
+      "pixel_sha256": "9d4b7f8b64da696eb3308a1c93af60d7ae157b151d224b2d55926287258b6b4b"
+    },
+    {
+      "name": "erase-40-soft",
+      "apply_median_ms": 1667.8664,
+      "apply_worst_ms": 1669.7155,
+      "history_median_ms": 0.0402,
+      "pixel_sha256": "72faa82065a9dea28eef72fc2098dfdaa2190c5240a313092f3f678ffdd590ee"
+    },
+    {
+      "name": "paint-200-hard",
+      "apply_median_ms": 10165.2844,
+      "apply_worst_ms": 10169.274,
+      "history_median_ms": 0.0271,
+      "pixel_sha256": "32fd79b4a4dcb5a9512ab4fef27a1a3174c373b6f302b8b427a393e30d7d5b68"
+    },
+    {
+      "name": "erase-200-hard",
+      "apply_median_ms": 10147.6752,
+      "apply_worst_ms": 10153.0024,
+      "history_median_ms": 0.0207,
+      "pixel_sha256": "ab53ac0dacd8372a6299f1886105e63c21ea018158fbc6d22f0a5d1119311b55"
+    },
+    {
+      "name": "paint-200-soft",
+      "apply_median_ms": 7498.2638,
+      "apply_worst_ms": 7499.7295,
+      "history_median_ms": 0.0205,
+      "pixel_sha256": "aef80087cd17ecb247a00135980e33b0ec76468e6e5a91c64db940417dd837f6"
+    },
+    {
+      "name": "erase-200-soft",
+      "apply_median_ms": 7487.0638,
+      "apply_worst_ms": 7491.4463,
+      "history_median_ms": 0.0172,
+      "pixel_sha256": "0ccb1303a71e44b9c40f3cc8bb482eacb500fc29dfd790d9350f66076a3e218e"
+    },
+    {
+      "name": "draft-256-points",
+      "render_median_ms": 2.8141,
+      "render_worst_ms": 3.2182
+    },
+    {
+      "name": "draft-1024-points",
+      "render_median_ms": 6.9156,
+      "render_worst_ms": 7.7206
+    },
+    {
+      "name": "draft-4096-points",
+      "render_median_ms": 23.1441,
+      "render_worst_ms": 23.6044
+    }
+  ]
+}

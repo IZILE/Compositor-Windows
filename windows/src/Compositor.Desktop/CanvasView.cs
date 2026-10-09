@@ -69,6 +69,7 @@ public sealed partial class CanvasView : Control
 
     /// <summary>The stroke being drawn, in document pixels, until the pointer comes back up.</summary>
     private readonly List<SKPoint> _stroke = [];
+    private readonly StrokePreview _strokePreview = new();
     private bool _painting;
 
     /// <summary>When set, dragging paints instead of panning.</summary>
@@ -238,6 +239,7 @@ public sealed partial class CanvasView : Control
     private bool _shaping;
     private ShapePreviewPlan? _shapePlan;
     private SKBitmap? _shapePreview;
+    private WriteableBitmap? _shapePreviewImage;
     private SKRectI _shapePreviewBox;
     private SKRectI _shapePreviewAt;
     private SKPoint _shapeAnchor;
@@ -349,6 +351,9 @@ public sealed partial class CanvasView : Control
 
     /// <summary>Handed the finished stroke, in document pixels.</summary>
     public Action<IReadOnlyList<SKPoint>>? StrokeFinished { get; set; }
+    public Action<SKPoint>? StrokeStarted { get; set; }
+    public Action<SKPoint>? StrokePointAdded { get; set; }
+    public Action? StrokeCancelled { get; set; }
 
     public CanvasView()
     {
@@ -443,7 +448,7 @@ public sealed partial class CanvasView : Control
         get => _document;
         set
         {
-            if (!ReferenceEquals(_document, value)) _rasterCache.Clear();
+            if (!ReferenceEquals(_document, value)) { _rasterCache.Clear(); CancelStroke(); }
             _document = value;
             _brushPointer = null; UpdateBrushCursor();
             Fit();
@@ -821,12 +826,12 @@ public sealed partial class CanvasView : Control
             var (style, at) = ask(_shapeBox);
             _shapePreview?.Dispose();
             _shapePreview = ShapeEdits.Image(style, Math.Max(1, at.Width), Math.Max(1, at.Height));
+            _shapePreviewImage?.Dispose(); _shapePreviewImage = _shapePreview is { } pixels ? ToImage(pixels) : null;
             _shapePreviewBox = _shapeBox;
             _shapePreviewAt = at;
         }
-        if (_shapePreview is not { } preview) return;
+        if (_shapePreviewImage is not { } image) return;
         var corner = ToScreen(new SKPoint(_shapePreviewAt.Left, _shapePreviewAt.Top));
-        using var image = ToImage(preview);
         context.DrawImage(image, new Rect(corner.X, corner.Y,
             _shapePreviewAt.Width * _zoom, _shapePreviewAt.Height * _zoom));
     }
@@ -862,6 +867,7 @@ public sealed partial class CanvasView : Control
     private void ForgetShapePreview()
     {
         _shapePreview?.Dispose();
+        _shapePreviewImage?.Dispose(); _shapePreviewImage = null;
         _shapePreview = null;
         _shapePreviewBox = default;
         _shapePreviewAt = default;
@@ -909,7 +915,13 @@ public sealed partial class CanvasView : Control
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         _zoomDrag = null;
+        CancelStroke();
         base.OnPointerCaptureLost(e);
+    }
+
+    private void CancelStroke()
+    {
+        _painting = false; _stroke.Clear(); _strokePreview.Dispose(); StrokeCancelled?.Invoke();
     }
 
     /// <summary>
@@ -1156,20 +1168,16 @@ public sealed partial class CanvasView : Control
 
     private void DrawPolyline(DrawingContext context, Pen under, Pen over, List<SKPoint> points, SKPoint? to)
     {
-        for (var index = 1; index < points.Count; index++)
+        if (points.Count == 0) return;
+        var geometry = new StreamGeometry();
+        using (var path = geometry.Open())
         {
-            var from = ToScreen(points[index - 1]);
-            var to2 = ToScreen(points[index]);
-            context.DrawLine(under, from, to2);
-            context.DrawLine(over, from, to2);
+            path.BeginFigure(ToScreen(points[0]), false);
+            for (var index = 1; index < points.Count; index++) path.LineTo(ToScreen(points[index]));
+            if (to is { } last) path.LineTo(ToScreen(last));
+            path.EndFigure(false);
         }
-        if (to is { } last && points.Count > 0)
-        {
-            var from = ToScreen(points[^1]);
-            var end = ToScreen(last);
-            context.DrawLine(under, from, end);
-            context.DrawLine(over, from, end);
-        }
+        context.DrawGeometry(null, under, geometry); context.DrawGeometry(null, over, geometry);
     }
 
     /// <summary>
@@ -1212,12 +1220,9 @@ public sealed partial class CanvasView : Control
     private void DrawStroke(DrawingContext context)
     {
         if (!_painting || _stroke.Count < 2) return;
-        var colour = Color.FromArgb(170, (byte)(Brush.Red * 255), (byte)(Brush.Green * 255), (byte)(Brush.Blue * 255));
-        var pen = new Pen(new SolidColorBrush(colour), Math.Max(1, Brush.Diameter * _zoom), lineCap: PenLineCap.Round);
-        for (var index = 1; index < _stroke.Count; index++)
-        {
-            context.DrawLine(pen, ToScreen(_stroke[index - 1]), ToScreen(_stroke[index]));
-        }
+        var image = _strokePreview.Get(Bounds.Size, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1,
+            _zoom, _origin, Brush, _stroke);
+        if (image is not null) context.DrawImage(image, new Rect(0, 0, image.PixelSize.Width, image.PixelSize.Height), new Rect(Bounds.Size));
     }
 
     private Point ToScreen(SKPoint document) =>
@@ -1378,8 +1383,10 @@ public sealed partial class CanvasView : Control
         if (PaintEnabled && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             _painting = true;
+            _strokePreview.Dispose();
             _stroke.Clear();
             _stroke.Add(ToDocument(e.GetPosition(this)));
+            StrokeStarted?.Invoke(_stroke[0]);
             e.Pointer.Capture(this);
             InvalidateVisual();
             e.Handled = true;
@@ -1516,6 +1523,7 @@ public sealed partial class CanvasView : Control
             if (_stroke.Count == 0 || Math.Abs(point.X - _stroke[^1].X) + Math.Abs(point.Y - _stroke[^1].Y) >= 0.5f)
             {
                 _stroke.Add(point);
+                StrokePointAdded?.Invoke(point);
                 InvalidateVisual();
             }
             base.OnPointerMoved(e);
@@ -1668,6 +1676,7 @@ public sealed partial class CanvasView : Control
             _stroke.Clear();
             InvalidateVisual();
             if (stroke.Count > 0) StrokeFinished?.Invoke(stroke);
+            _strokePreview.Dispose();
             e.Pointer.Capture(null);
             return;
         }

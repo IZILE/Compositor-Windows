@@ -27,14 +27,17 @@ internal sealed class InlineNumber : StackPanel
     internal event Action? EditingFinished;
 
     internal InlineNumber(string name, double minimum, double maximum, double step = 1,
-        string unit = "", bool slider = false, double fieldWidth = 42, double? sliderMaximum = null, string? format = null)
+        string unit = "", bool slider = false, double fieldWidth = 42, double? sliderMaximum = null, string? format = null,
+        string[]? alternateLabels = null)
     {
         _minimum = minimum; _maximum = maximum; _step = step;
         _format = format ?? (step < 1 ? "0.#" : "0");
         Orientation = Orientation.Horizontal; Spacing = 6;
         VerticalAlignment = VerticalAlignment.Center; Focusable = true;
-        _label = new TextBlock { [!TextBlock.TextProperty] = UiText.Bind(name),
-            VerticalAlignment = VerticalAlignment.Center, Cursor = new Cursor(StandardCursorType.SizeWestEast) };
+        _label = alternateLabels is null ? new TextBlock() : new StableCaption { Variants = alternateLabels };
+        UiText.Set(_label, TextBlock.TextProperty, name);
+        _label.VerticalAlignment = VerticalAlignment.Center;
+        _label.Cursor = new Cursor(StandardCursorType.SizeWestEast);
         // Reserve enough room for the largest valid number, including its sign and decimal places.
         var longest = Math.Max(minimum.ToString(_format, CultureInfo.InvariantCulture).Length,
             maximum.ToString(_format, CultureInfo.InvariantCulture).Length);

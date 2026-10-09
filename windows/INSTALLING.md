@@ -1,8 +1,10 @@
-# Compositor Windows 0.6.2
+# Compositor Windows 0.6.3
 
 从 GitHub Releases 下载 `Compositor-Setup.exe`。默认安装到当前用户的 C 盘程序目录
 `%LOCALAPPDATA%\Programs\Compositor`，同时建立桌面和开始菜单快捷方式。
-不需要单独安装 .NET。升级时运行新版安装包，覆盖同一个安装目录。
+安装向导中的“选择安装位置”页面可直接编辑路径，也可点“浏览”选择其他目录（包括其他盘符）。
+不需要单独安装 .NET。升级时运行新版安装包，会沿用上次选择的安装目录。
+需要自己选择目录时，请正常双击安装包；静默安装不会显示向导。
 
 界面在“帮助 → 语言”中切换简体中文和英文。保留 Windows 窗口按钮、Ctrl 快捷键、
 右键菜单和文件选择方式。应用内控件采用统一的深色、圆角和缓出过渡。
@@ -33,11 +35,19 @@
 鼠标悬停和按下改为图标、文字明暗的平滑变化，避免两层底色叠加时突然变亮。普通操作按钮、
 关闭按钮的反馈及 Windows 操作逻辑保留。新增实际背景像素检查，覆盖选中与未选中状态。
 
+0.6.3 修复笔刷／橡皮擦标题及同组下拉选项推移控件、菜单经过空隙时背景反复淡入淡出。
+普通笔刷和橡皮擦在输入过程中累计笔触，松手时合并为一次可撤销的编辑；长笔画预览只绘制新增部分。
+形状预览复用已转换的图像，长套索轮廓使用连续路径。保留原有像素精度、笔刷间距、软边和选区约束。
+超大笔刷、复杂图层合成、滤镜最终应用及大图导入／保存仍可能耗时，不保证所有工程的固定帧率。
+
 这是独立社区 Windows 移植版。并非 Mac 原生版本，也尚未完成所有 Mac 功能、像素和时序的实机对照。
 大图滤镜性能、多屏 DPI、触控板惯性、Apple Vision 主体选择等仍有差异。
 构建未签名。原作和图标的 MIT 许可见 LICENSE；依赖许可见 ThirdPartyLicenses。
 
 Install or upgrade with `Compositor-Setup.exe`. The default is the current user's
-`%LOCALAPPDATA%\Programs\Compositor` directory. Settings and editable projects survive uninstall.
+`%LOCALAPPDATA%\Programs\Compositor` directory. Use Browse on the destination page to choose
+another folder or drive. Upgrades remember the previously selected location. Double-click the
+installer normally to see this page; silent installation does not display the wizard.
+Settings and editable projects survive uninstall.
 Use Help > Language to switch English and Simplified Chinese. This community port retains Windows
 window controls and shortcuts, with macOS-inspired in-app controls and transitions.

@@ -34,7 +34,20 @@ internal static partial class Program
         }
         if (args is ["--settings-path"]) { Console.WriteLine(UserData.DirectoryPath); return 0; }
         if (args is ["--performance", var performanceOutput]) return Performance(performanceOutput);
+        if (args is ["--brush-performance", var brushOutput]) return BrushPerformance(brushOutput);
+        if (args is ["--stroke-preview", var strokeOutput])
+        {
+            Directory.CreateDirectory(strokeOutput); BuildHeadless().SetupWithoutStarting();
+            var report = new List<string>(); StrokePreviewChecks.Run(report, strokeOutput);
+            Console.WriteLine(string.Join(Environment.NewLine, report)); return 0;
+        }
         if (args is ["--native-icons", var iconOutput]) return NativeIcons(iconOutput);
+        if (args is ["--toolbar-layout", var toolbarOutput])
+        {
+            Directory.CreateDirectory(toolbarOutput); BuildHeadless().SetupWithoutStarting();
+            var report = new List<string>(); ToolbarStabilityChecks.Run(report, toolbarOutput);
+            Console.WriteLine(string.Join(Environment.NewLine, report)); return 0;
+        }
         if (args is ["--selection-surfaces", var surfaceOutput])
         {
             Directory.CreateDirectory(surfaceOutput); BuildHeadless().SetupWithoutStarting();

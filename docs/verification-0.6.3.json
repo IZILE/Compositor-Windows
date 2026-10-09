@@ -1,0 +1,105 @@
+{
+  "version": "0.6.3",
+  "core_tests_passed": 900,
+  "ui_assertions_passed": 3015,
+  "published_checks": [
+    {
+      "name": "ui",
+      "exit_code": 0,
+      "report_lines": 3015,
+      "pass_lines": 3015
+    },
+    {
+      "name": "dialogs",
+      "exit_code": 0,
+      "report_lines": 93,
+      "pass_lines": 93
+    },
+    {
+      "name": "windows-en",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "windows-zh",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "lifecycle",
+      "exit_code": 0,
+      "report_lines": 26,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-en",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-zh",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "shortcuts",
+      "exit_code": 0,
+      "report_lines": 117,
+      "pass_lines": 0
+    },
+    {
+      "name": "camera-raw",
+      "exit_code": 0,
+      "report_lines": 14,
+      "pass_lines": 0
+    },
+    {
+      "name": "performance",
+      "exit_code": 0,
+      "report_lines": 23,
+      "pass_lines": 13
+    },
+    {
+      "name": "native-icons",
+      "exit_code": 0,
+      "report_lines": 21,
+      "pass_lines": 21
+    },
+    {
+      "name": "brush-performance",
+      "exit_code": 0,
+      "report_lines": 19,
+      "pass_lines": 0
+    }
+  ],
+  "exe_sha256": "5590f8cd15f877a5eff42b56251fdc18ca5321cbcab7b52c16fa06a2bd26ff21",
+  "brush_final_pixel_hashes_unchanged": true,
+  "incremental_undo_one_step": true,
+  "toolbar_locales": [
+    "en",
+    "zh-CN"
+  ],
+  "toolbar_widths": [
+    760,
+    1180,
+    1680
+  ],
+  "menu_dense_pointer_gap_test": "passed",
+  "installer_destination_selectable": true,
+  "performance_is_physical_fps": false,
+  "remaining": [
+    "complex layer composition",
+    "large-document operations",
+    "Mac live animation and physical DPI comparison"
+  ],
+  "platform": "Windows x64",
+  "dialog_cases_en_zh": 92,
+  "installer_first_repeat_upgrade_uninstall": "passed",
+  "settings_preserved": "passed",
+  "installer_sha256": "4312bb09173ba5d2d57cb55cb8d66c65fef0c44585ec3ad87e35d89f09f1b3b9",
+  "trimmed_build_shipped": false
+}

@@ -46,6 +46,7 @@ internal static partial class Program
         Measure("zoom", index => view.RestoreViewport((initial.Zoom * (1 + index * 0.012), initial.OriginX, initial.OriginY)));
         Measure("layer-opacity", index => { document.Layers[^1].Opacity = 0.2 + index * 0.04; view.InvalidateVisual(); });
         Measure("layer-transform", index => { var layer = document.Layers[^1]; layer.Transform = layer.Transform with { X = 80 + index * 2 }; view.InvalidateVisual(); });
+        view.MeasureDraftPerformance(target, results);
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
         File.WriteAllText(output, JsonSerializer.Serialize(new { document = "2048x1536, 6 raster layers", renderer = "Avalonia headless / real Skia CPU", results },
             new JsonSerializerOptions { WriteIndented = true }));

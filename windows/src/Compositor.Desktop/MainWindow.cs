@@ -33,6 +33,7 @@ public sealed partial class MainWindow : Window
     private static readonly IBrush Ink = Skin.LabelBrush;
 
     private readonly CanvasView _canvas = new();
+    private BrushEdits.PreparedStroke? _preparedStroke;
     /// <summary>The layers panel: several rows may be selected, and the current row is the one an edit acts on.</summary>
     private readonly ListBox _layers = new() { Classes = { "layerlist" }, SelectionMode = Avalonia.Controls.SelectionMode.Multiple };
     private readonly TextBlock _status = new()
@@ -336,6 +337,9 @@ public sealed partial class MainWindow : Window
         // the appearance; controls that name their own text keep it.
         TextElement.SetForeground(this, Skin.LabelBrush);
         _canvas.StrokeFinished = Painted;
+        _canvas.StrokeStarted = PrepareBrush;
+        _canvas.StrokePointAdded = point => _preparedStroke?.Append(point);
+        _canvas.StrokeCancelled = () => { _preparedStroke?.Dispose(); _preparedStroke = null; };
         _canvas.MarqueeFinished = (box, mode) => MarqueeFinished(box, mode, _tool == Tool.Ellipse);
         _canvas.LassoFinished = (points, mode) => LassoFinished(points, mode, _tool == Tool.Polygon);
         _canvas.WandClicked = WandClicked;
@@ -5554,6 +5558,7 @@ public sealed partial class MainWindow : Window
     /// <summary>Paints a finished stroke into the selected layer, as one undo step.</summary>
     private void Painted(IReadOnlyList<SKPoint> stroke)
     {
+        using var prepared = _preparedStroke; _preparedStroke = null;
         if (_document is not { } document || Selected is not { } id) return;
         if (BrushFor(stroke) is not { } settings) return;
         var name = _tool switch
@@ -5571,8 +5576,10 @@ public sealed partial class MainWindow : Window
             {
                 // The selected mask color is independent of the image's Paint/Erase mode, as on the Mac.
                 var value = _options.MaskPaintWhite ? 1 : 0;
+                var maskSettings = settings with { Red = value, Green = value, Blue = value, Erasing = false };
+                if (prepared?.TryCommit(document, id, maskSettings, mask: true) == true) return true;
                 return BrushEdits.PaintMask(document, id,
-                    stroke, settings with { Red = value, Green = value, Blue = value, Erasing = false });
+                    stroke, maskSettings);
             }
             // Liquify and Smudge work on pixels that are already there: a blank layer has nothing to push.
             if (_tool is Tool.Liquify or Tool.Smudge)
@@ -5580,6 +5587,7 @@ public sealed partial class MainWindow : Window
                 return WarpEdits.Warp(document, id, stroke, Warp(_tool), settings);
             }
             // A blank layer gets its pixels on the first paint, as the Mac build does.
+            if (prepared?.TryCommit(document, id, settings) == true) return true;
             BrushEdits.EnsurePixels(document, id);
             return BrushEdits.Paint(document, id, stroke, settings);
         });
@@ -5704,6 +5712,20 @@ public sealed partial class MainWindow : Window
     private void ShowLayers(CanvasDocument document)
     {
         UpdateLayerRows(document);
+    }
+
+    private void PrepareBrush(SKPoint first)
+    {
+        _preparedStroke?.Dispose(); _preparedStroke = null;
+        if (_tool != Tool.Brush || _document is not { } document || Selected is not { } id) return;
+        var settings = _canvas.Brush;
+        if (_options.PaintOnMask)
+        {
+            var value = _options.MaskPaintWhite ? 1 : 0;
+            settings = settings with { Red = value, Green = value, Blue = value, Erasing = false };
+        }
+        _preparedStroke = BrushEdits.Prepare(document, id, settings, _options.PaintOnMask);
+        _preparedStroke?.Append(first);
     }
 
     /// <summary>

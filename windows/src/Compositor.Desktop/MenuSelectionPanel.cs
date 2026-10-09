@@ -34,7 +34,11 @@ internal sealed class MenuSelectionPanel : StackPanel
         {
             if (args.Property == LeftProperty || args.Property == TopProperty || args.Property == HighlightWidthProperty
                 || args.Property == HighlightHeightProperty || args.Property == AlphaProperty) _surface.InvalidateVisual();
+            if (args.Property == IsPointerOverProperty) Schedule();
         };
+        // Hit-test the space between rows too. Crossing a margin or separator must not briefly
+        // fade the shared highlight out and back in before the next row receives the pointer.
+        Background = Brushes.Transparent;
         ClipToBounds = true;
         var easing = new SplineEasing(0, 0, 0.58, 1);
         Transitions = new Transitions();
@@ -80,7 +84,8 @@ internal sealed class MenuSelectionPanel : StackPanel
         var enabled = Children.OfType<MenuItem>().Where(item => item.IsEnabled && item.IsVisible).ToArray();
         var item = enabled.FirstOrDefault(item => item.IsSelected)
             ?? enabled.FirstOrDefault(item => item.IsPointerOver)
-            ?? enabled.FirstOrDefault(item => item.IsSubMenuOpen);
+            ?? enabled.FirstOrDefault(item => item.IsSubMenuOpen)
+            ?? (IsPointerOver && enabled.Contains(Highlighted) ? Highlighted : null);
         Highlighted = item;
         if (item is null) { Motion.Set(this, AlphaProperty, 0.0); return; }
         var bounds = item.Bounds;

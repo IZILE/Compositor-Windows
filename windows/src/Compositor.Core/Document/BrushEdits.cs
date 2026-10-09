@@ -73,13 +73,14 @@ public sealed record BrushSettings(
 /// carried back through the layer's transform; the tip is stamped along the path at the spacing the Mac
 /// build uses, and the whole stroke is capped by one opacity.
 /// </summary>
-public static class BrushEdits
+public static partial class BrushEdits
 {
+    private static readonly double FalloffRim = Math.Exp(-2.5);
     /// <summary>Soft-brush falloff across the region between the hardness radius and the rim.</summary>
     public static double Falloff(double u)
     {
         const double k = 2.5;
-        return Math.Max(0, (Math.Exp(-k * u * u) - Math.Exp(-k)) / (1 - Math.Exp(-k)));
+        return Math.Max(0, (Math.Exp(-k * u * u) - FalloffRim) / (1 - FalloffRim));
     }
 
     /// <summary>The tip's coverage at <paramref name="distance"/> from its middle.</summary>
@@ -265,44 +266,18 @@ public static class BrushEdits
     private static bool Stroke(CanvasDocument document, IReadOnlyList<SKPoint> points, BrushSettings settings,
         SKMatrix toDocument, SKMatrix toPixel, int width, int height, out float[] coverage)
     {
-        coverage = new float[width * height];
-        var radius = settings.Diameter / 2;
-        var spacing = Spacing(settings.Diameter, settings.Hardness);
-        var hard = settings.Hardness >= 1;
-        var region = document.Selection.CoverageRect(document.Width, document.Height);
-        SKBitmap? clip;
+        coverage = [];
         try
         {
-            clip = document.Selection.Coverage(region);
+            using var stroke = new CoverageAccumulator(document, settings, toDocument, toPixel, width, height);
+            foreach (var point in points) stroke.Append(point);
+            coverage = stroke.Coverage;
+            return true;
         }
         catch (InvalidOperationException)
         {
             return false;
         }
-        using var _ = clip;
-        ReadOnlySpan<byte> clipped = clip is null ? default : clip.GetPixelSpan();
-        var selection = new Clip(clipped, clip?.RowBytes ?? 0, region);
-        // The first dab sits on the first sample; the rest follow it at even spacing, carrying whatever
-        // distance is left over the end of one run into the next so a fast pointer leaves no gaps.
-        Stamp(coverage, width, height, points[0], radius, toDocument, toPixel, hard, settings.Hardness, selection);
-        var next = spacing;
-        for (var index = 1; index < points.Count; index++)
-        {
-            var from = points[index - 1];
-            var to = points[index];
-            var dx = to.X - from.X;
-            var dy = to.Y - from.Y;
-            var length = Math.Sqrt((double)dx * dx + (double)dy * dy);
-            if (length <= 0) continue;
-            while (next <= length)
-            {
-                var at = new SKPoint((float)(from.X + dx * next / length), (float)(from.Y + dy * next / length));
-                Stamp(coverage, width, height, at, radius, toDocument, toPixel, hard, settings.Hardness, selection);
-                next += spacing;
-            }
-            next -= length;
-        }
-        return true;
     }
 
     /// <summary>
@@ -507,9 +482,16 @@ public static class BrushEdits
         // The document square around the dab, brought into pixels: a generous box, since the transform may
         // turn it.
         double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
-        foreach (var (dx, dy) in new[] { (-radius, -radius), (radius, -radius), (radius, radius), (-radius, radius) })
+        ReadOnlySpan<SKPoint> corners = stackalloc SKPoint[]
         {
-            var corner = toPixel.MapPoint(centre.X + (float)dx, centre.Y + (float)dy);
+            new(centre.X - (float)radius, centre.Y - (float)radius),
+            new(centre.X + (float)radius, centre.Y - (float)radius),
+            new(centre.X + (float)radius, centre.Y + (float)radius),
+            new(centre.X - (float)radius, centre.Y + (float)radius),
+        };
+        foreach (var point in corners)
+        {
+            var corner = toPixel.MapPoint(point);
             minX = Math.Min(minX, corner.X);
             minY = Math.Min(minY, corner.Y);
             maxX = Math.Max(maxX, corner.X);
@@ -519,15 +501,21 @@ public static class BrushEdits
         var top = Math.Max(0, (int)Math.Floor(minY) - 1);
         var right = Math.Min(width, (int)Math.Ceiling(maxX) + 1);
         var bottom = Math.Min(height, (int)Math.Ceiling(maxY) + 1);
+        var translation = toDocument.ScaleX == 1 && toDocument.ScaleY == 1
+            && toDocument.SkewX == 0 && toDocument.SkewY == 0;
         for (var y = top; y < bottom; y++)
         {
             for (var x = left; x < right; x++)
             {
-                var at = toDocument.MapPoint(x + 0.5f, y + 0.5f);
+                var index = y * width + x;
+                // A hard dab gives a covered pixel its fixed selection coverage. Later dabs cannot
+                // increase it. Avoid repeated coordinate mapping and tip work inside the same stroke.
+                if (hard && coverage[index] > 0) continue;
+                var at = translation ? new SKPoint(x + 0.5f + toDocument.TransX, y + 0.5f + toDocument.TransY)
+                    : toDocument.MapPoint(x + 0.5f, y + 0.5f);
                 var distance = Math.Sqrt(Math.Pow(at.X - centre.X, 2) + Math.Pow(at.Y - centre.Y, 2));
                 var tip = Tip(distance, radius, hardness) * selection.At(at.X, at.Y);
                 if (tip <= 0) continue;
-                var index = y * width + x;
                 // Overlapping dabs within one stroke must not build up: they take the larger coverage, or
                 // blend, so the stroke's opacity is what caps it.
                 coverage[index] = hard ? Math.Max(coverage[index], (float)tip)

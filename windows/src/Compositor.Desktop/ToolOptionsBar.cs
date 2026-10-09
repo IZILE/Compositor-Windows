@@ -31,7 +31,7 @@ internal sealed partial class ToolOptionsBar : Border
     private const double StripHeight = 42;
 
     private readonly ToolOptions _options;
-    private readonly TextBlock _title = new()
+    private readonly StableCaption _title = new()
     {
         VerticalAlignment = VerticalAlignment.Center,
         FontWeight = FontWeight.SemiBold,
@@ -122,6 +122,14 @@ internal sealed partial class ToolOptionsBar : Border
             On("transform", tool == Tool.Move && hasDocument);
             On("type", tool == Tool.Type);
             On("zoom", tool is Tool.Pan or Tool.Zoom);
+            _title.Variants = tool switch
+            {
+                Tool.Brush => ["Brush", "Eraser"],
+                Tool.Marquee or Tool.Ellipse => ["Marquee", "Elliptical marquee"],
+                Tool.Lasso or Tool.Polygon => ["Lasso", "Polygonal lasso"],
+                Tool.Pan or Tool.Zoom => ["Pan", "Zoom"],
+                _ => [],
+            };
             UiText.Set(_title, TextBlock.TextProperty, tool == Tool.Brush && _options.Erase ? "Eraser" : Names.TryGetValue(tool, out var name) ? name : "");
             // The marquee's shape and the lasso's kind *are* the tool in hand, so the bar follows the tool
             // rather than the other way round: picking one here asks for the tool the window already has.
@@ -210,17 +218,23 @@ internal sealed partial class ToolOptionsBar : Border
     internal InlineNumber BrushSmoothing => _smoothing;
     internal ComboBox MaskPaintChoice => _maskPaint;
     internal SegmentedChoice BrushModeChoice => _brushMode;
+    internal TextBlock TitleLabel => _title;
+    internal IReadOnlyList<Control> CellsFor(string name) => _named.TryGetValue(name, out var cells) ? cells : [];
 
 
     private readonly InlineNumber _size = new("Size", 1, 2000, unit: "px", fieldWidth: 48);
     private readonly InlineNumber _hardness = new("Hardness", 0, 100, unit: "%", slider: true);
-    private readonly InlineNumber _opacity = new("Opacity", 1, 100, unit: "%", slider: true);
+    private readonly InlineNumber _opacity = new("Opacity", 1, 100, unit: "%", slider: true, alternateLabels: ["Opacity", "Strength"]);
     private readonly InlineNumber _blurRadius = new("Radius", 0.5, 50, step: 0.1, unit: "px", slider: true, sliderMaximum: 20);
     private readonly InlineNumber _smoothing = new("Smoothing", 0, 100, slider: true);
-    private readonly Button _tolerance = new();
-    private readonly Button _sampleSize = new();
-    private readonly Button _corner = new();
-    private readonly Button _lineWidth = new();
+    private readonly Button _tolerance = new StableCaptionButton { AlternateCaptions = () =>
+        [UiText.Format("Tolerance {0}", 255), UiText.Format("Tolerance {0}", 188)] };
+    private readonly Button _sampleSize = new StableCaptionButton { AlternateCaptions = () =>
+        [UiText.Format("Sample {0}", 100), UiText.Format("Sample {0}", 88)] };
+    private readonly Button _corner = new StableCaptionButton { AlternateCaptions = ShapeAmountCaptions };
+    private readonly Button _lineWidth = new StableCaptionButton { AlternateCaptions = ShapeAmountCaptions };
+    private static IEnumerable<string> ShapeAmountCaptions() =>
+        [UiText.Format("Radius {0:0}", 1000), UiText.Format("Radius {0:0}", 888), UiText.Format("Width {0:0}", 200)];
     private readonly Swatch _fill = new();
     private readonly Swatch _gradientFill = new();
     private readonly SegmentedChoice _brushMode = new("Paint", "Erase");
@@ -229,15 +243,15 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly SegmentedChoice _healMode = new("Content-Aware", "Create Texture", "Proximity Match");
     private readonly CheckBox _aligned = new() { [!ContentControl.ContentProperty] = UiText.Bind("Aligned") };
     private readonly SegmentedChoice _cloneAll = new("This Layer", "All Layers");
-    private readonly ComboBox _marqueeShape = new();
-    private readonly ComboBox _lassoKind = new();
+    private readonly ComboBox _marqueeShape = new StableChoice();
+    private readonly ComboBox _lassoKind = new StableChoice();
     private readonly CheckBox _contiguous = new() { [!ContentControl.ContentProperty] = UiText.Bind("Contiguous") };
     private readonly CheckBox _antialias = new() { [!ContentControl.ContentProperty] = UiText.Bind("Anti-alias") };
     private readonly CheckBox _sampleRing = new() { [!ContentControl.ContentProperty] = UiText.Bind("Sample Ring") };
-    private readonly ComboBox _wandAll = new();
-    private readonly ComboBox _shapeKind = new();
-    private readonly ComboBox _gradientKind = new();
-    private readonly ComboBox _gradientTo = new();
+    private readonly ComboBox _wandAll = new StableChoice();
+    private readonly ComboBox _shapeKind = new StableChoice();
+    private readonly ComboBox _gradientKind = new StableChoice();
+    private readonly ComboBox _gradientTo = new StableChoice();
     private readonly CheckBox _gradientReversed = new() { [!ContentControl.ContentProperty] = UiText.Bind("Reverse") };
     private readonly ComboBox _cropRatio = new() { Width = 150 };
     private readonly Button _cropApply = new() { [!ContentControl.ContentProperty] = UiText.Bind("Apply Crop") };
