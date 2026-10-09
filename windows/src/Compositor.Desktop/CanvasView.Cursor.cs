@@ -20,8 +20,11 @@ public sealed partial class CanvasView
     private void UpdateBrushCursor()
     {
         var shown = PaintEnabled && _document is not null && !EyedropperOnClick;
-        _cursorLayer.Update(shown ? _brushPointer : null, Math.Max(1, Brush.Diameter * _zoom), Brush.Hardness,
-            shown && SampleSourceOnClick && CloneSourcePosition is { } source ? ToScreen(source) : null);
+        var tip = Brush.Tip;
+        _cursorLayer.Update(shown ? _brushPointer : null, Math.Max(1, Brush.Diameter * _zoom), tip is null ? Brush.Hardness : 1,
+            shown && SampleSourceOnClick && CloneSourcePosition is { } source ? ToScreen(source) : null,
+            tip is null ? 1 : (double)tip.Width / Math.Max(tip.Width, tip.Height),
+            tip is null ? 1 : (double)tip.Height / Math.Max(tip.Width, tip.Height), tip is not null);
         Cursor = shown ? _brushCrossCursor : null;
     }
 
@@ -35,19 +38,20 @@ public sealed partial class CanvasView
         private static readonly Pen InnerWhite = new(Brushes.White, 2.5) { DashStyle = new DashStyle([4.0, 3.0], 0) };
         private static readonly Pen InnerBlack = new(Brushes.Black, 1) { DashStyle = new DashStyle([4.0, 3.0], 0) };
         private static readonly Pen MarkerWhite = new(Brushes.White, 3), MarkerBlack = new(Brushes.Black, 1);
+        private bool _rectangle;
         internal BrushCursor() { IsHitTestVisible = false; ClipToBounds = true; }
-        internal void Update(Point? point, double diameter, double hardness, Point? marker)
+        internal void Update(Point? point, double diameter, double hardness, Point? marker, double ratioX, double ratioY, bool rectangle)
         {
-            Rect? next = point is { } at ? new Rect(at.X - diameter / 2, at.Y - diameter / 2, diameter, diameter) : null;
+            Rect? next = point is { } at ? new Rect(at.X - diameter * ratioX / 2, at.Y - diameter * ratioY / 2, diameter * ratioX, diameter * ratioY) : null;
             Rect? inner = next is { } circle && hardness > 0 && hardness < 1 ? circle.Deflate(circle.Width * (1 - hardness) / 2) : null;
-            if (Circle == next && HardnessCircle == inner && Marker == marker) return;
-            Circle = next; HardnessCircle = inner; Marker = marker; InvalidateVisual();
+            if (Circle == next && HardnessCircle == inner && Marker == marker && _rectangle == rectangle) return;
+            Circle = next; HardnessCircle = inner; Marker = marker; _rectangle = rectangle; InvalidateVisual();
         }
         public override void Render(DrawingContext context)
         {
             if (Circle is not { } circle) return;
             // BrushCursorOverlay.swift draws a white 2.5-point rim under a black one-point rim.
-            var oval = new EllipseGeometry(circle);
+            Geometry oval = _rectangle ? new RectangleGeometry(circle) : new EllipseGeometry(circle);
             context.DrawGeometry(null, OuterWhite, oval);
             context.DrawGeometry(null, OuterBlack, oval);
             if (HardnessCircle is { } inner)

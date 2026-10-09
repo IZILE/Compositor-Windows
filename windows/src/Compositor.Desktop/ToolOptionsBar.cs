@@ -7,13 +7,6 @@ using Compositor.Core.Format;
 
 namespace Compositor.Desktop;
 
-/// <summary>Which of the Shape tool's amounts was asked for.</summary>
-internal enum ShapeSetting
-{
-    CornerRadius,
-    LineWidth,
-}
-
 /// <summary>Which of the magic wand's amounts was asked for.</summary>
 internal enum WandSetting
 {
@@ -55,9 +48,6 @@ internal sealed partial class ToolOptionsBar : Border
     /// <summary>One of the magic wand's amounts was asked for.</summary>
     public event Action<WandSetting>? WandSettingAsked;
 
-    /// <summary>One of the Shape tool's amounts was asked for.</summary>
-    public event Action<ShapeSetting>? ShapeSettingAsked;
-
     /// <summary>A colour swatch was clicked: true for the foreground, false for the gradient's background.</summary>
     public event Action<bool>? ColourAsked;
 
@@ -71,6 +61,7 @@ internal sealed partial class ToolOptionsBar : Border
 
     /// <summary>The Type tool's text is to be edited.</summary>
     public event Action? TextAsked;
+    public event Action? BrushesAsked;
 
     public ToolOptionsBar(ToolOptions options)
     {
@@ -89,6 +80,7 @@ internal sealed partial class ToolOptionsBar : Border
         row.Children.Add(_pendingTransformActions);
         Child = row;
         Build();
+        LayoutUpdated += (_, _) => FitSliders();
     }
 
     /// <summary>
@@ -103,6 +95,7 @@ internal sealed partial class ToolOptionsBar : Border
         {
             On("brush", brush && hasDocument);
             On("mode", tool == Tool.Brush);
+            _hardness.IsEnabled = tool != Tool.Brush || _options.Brush.Tip is null;
             On("smoothing", tool == Tool.Brush);
             On("smear", tool is Tool.Blur or Tool.Liquify or Tool.Smudge);
             On("brushColor", brush && tool is not (Tool.Clone or Tool.Blur or Tool.Liquify or Tool.Smudge) && !maskSelected);
@@ -116,7 +109,7 @@ internal sealed partial class ToolOptionsBar : Border
             On("wand", tool == Tool.Wand);
                 On("gradient", tool == Tool.Gradient);
             On("shape", tool == Tool.Shape);
-            On("corner", tool == Tool.Shape && _options.Shape != ShapeKind.Line);
+            On("corner", tool == Tool.Shape && _options.Shape == ShapeKind.Rectangle);
             On("linewidth", tool == Tool.Shape && _options.Shape == ShapeKind.Line);
             On("crop", tool == Tool.Crop);
             On("transform", tool == Tool.Move && hasDocument);
@@ -170,9 +163,10 @@ internal sealed partial class ToolOptionsBar : Border
         _smoothing.Value = _options.Brush.Smoothing * 100;
         _tolerance.Content = UiText.Format("Tolerance {0}", _options.Wand.Tolerance);
         _sampleSize.Content = UiText.Format("Sample {0}", _options.Wand.Radius);
-        _corner.Content = UiText.Format("Radius {0:0}", _options.ShapeCornerRadius);
-        _lineWidth.Content = UiText.Format("Width {0:0}", _options.ShapeLineWidth);
+        _corner.Value = _options.ShapeCornerRadius;
+        _lineWidth.Value = _options.ShapeLineWidth;
         _fill.Show(_options.Brush.Red, _options.Brush.Green, _options.Brush.Blue);
+        _shapeFill.Show(_options.Brush.Red, _options.Brush.Green, _options.Brush.Blue);
         _gradientFill.Show(_options.GradientBackground.Red, _options.GradientBackground.Green,
             _options.GradientBackground.Blue);
         _brushMode.SelectedIndex = _options.Erase ? 1 : 0;
@@ -218,26 +212,30 @@ internal sealed partial class ToolOptionsBar : Border
     internal InlineNumber BrushSmoothing => _smoothing;
     internal ComboBox MaskPaintChoice => _maskPaint;
     internal SegmentedChoice BrushModeChoice => _brushMode;
+    internal SegmentedChoice ShapeChoice => _shapeKind;
+    internal Button BrushesButton => _brushes;
     internal TextBlock TitleLabel => _title;
     internal IReadOnlyList<Control> CellsFor(string name) => _named.TryGetValue(name, out var cells) ? cells : [];
 
 
-    private readonly InlineNumber _size = new("Size", 1, 2000, unit: "px", fieldWidth: 48);
-    private readonly InlineNumber _hardness = new("Hardness", 0, 100, unit: "%", slider: true);
-    private readonly InlineNumber _opacity = new("Opacity", 1, 100, unit: "%", slider: true, alternateLabels: ["Opacity", "Strength"]);
-    private readonly InlineNumber _blurRadius = new("Radius", 0.5, 50, step: 0.1, unit: "px", slider: true, sliderMaximum: 20);
-    private readonly InlineNumber _smoothing = new("Smoothing", 0, 100, slider: true);
+    private readonly InlineNumber _size = new("Size", 1, 2000, unit: "px", fieldWidth: 48, slider: true, adaptiveSlider: true, logarithmicSlider: true);
+    private readonly InlineNumber _hardness = new("Hardness", 0, 100, unit: "%", slider: true, adaptiveSlider: true);
+    private readonly InlineNumber _opacity = new("Opacity", 1, 100, unit: "%", slider: true, alternateLabels: ["Opacity", "Strength"], adaptiveSlider: true);
+    private readonly InlineNumber _blurRadius = new("Radius", 0.5, 50, step: 0.1, unit: "px", slider: true, sliderMaximum: 20, adaptiveSlider: true);
+    private readonly InlineNumber _smoothing = new("Smoothing", 0, 100, slider: true, adaptiveSlider: true);
     private readonly Button _tolerance = new StableCaptionButton { AlternateCaptions = () =>
         [UiText.Format("Tolerance {0}", 255), UiText.Format("Tolerance {0}", 188)] };
     private readonly Button _sampleSize = new StableCaptionButton { AlternateCaptions = () =>
         [UiText.Format("Sample {0}", 100), UiText.Format("Sample {0}", 88)] };
-    private readonly Button _corner = new StableCaptionButton { AlternateCaptions = ShapeAmountCaptions };
-    private readonly Button _lineWidth = new StableCaptionButton { AlternateCaptions = ShapeAmountCaptions };
-    private static IEnumerable<string> ShapeAmountCaptions() =>
-        [UiText.Format("Radius {0:0}", 1000), UiText.Format("Radius {0:0}", 888), UiText.Format("Width {0:0}", 200)];
+    private readonly InlineNumber _corner = new("Radius", 0, 5000, unit: "px", fieldWidth: 48, slider: true,
+        sliderMaximum: 200, adaptiveSlider: true, alternateLabels: ["Radius", "Width"]);
+    private readonly InlineNumber _lineWidth = new("Width", 1, 5000, unit: "px", fieldWidth: 48, slider: true,
+        sliderMaximum: 100, adaptiveSlider: true, alternateLabels: ["Radius", "Width"]);
     private readonly Swatch _fill = new();
+    private readonly Swatch _shapeFill = new();
     private readonly Swatch _gradientFill = new();
     private readonly SegmentedChoice _brushMode = new("Paint", "Erase");
+    private readonly Button _brushes = new() { [!ContentControl.ContentProperty] = UiText.Bind("Brushes…") };
     private readonly SegmentedChoice _smearMode = new("Liquify", "Blur", "Smudge");
     private readonly ComboBox _maskPaint = new();
     private readonly SegmentedChoice _healMode = new("Content-Aware", "Create Texture", "Proximity Match");
@@ -249,7 +247,7 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly CheckBox _antialias = new() { [!ContentControl.ContentProperty] = UiText.Bind("Anti-alias") };
     private readonly CheckBox _sampleRing = new() { [!ContentControl.ContentProperty] = UiText.Bind("Sample Ring") };
     private readonly ComboBox _wandAll = new StableChoice();
-    private readonly ComboBox _shapeKind = new StableChoice();
+    private readonly SegmentedChoice _shapeKind = new("Rectangle", "Ellipse", "Line");
     private readonly ComboBox _gradientKind = new StableChoice();
     private readonly ComboBox _gradientTo = new StableChoice();
     private readonly CheckBox _gradientReversed = new() { [!ContentControl.ContentProperty] = UiText.Bind("Reverse") };
@@ -299,9 +297,10 @@ internal sealed partial class ToolOptionsBar : Border
             var which = setting;
             button.Click += (_, _) => WandSettingAsked?.Invoke(which);
         }
-        _corner.Click += (_, _) => ShapeSettingAsked?.Invoke(ShapeSetting.CornerRadius);
-        _lineWidth.Click += (_, _) => ShapeSettingAsked?.Invoke(ShapeSetting.LineWidth);
+        _corner.Changed += value => Set(ref _options.ShapeCornerRadius, value);
+        _lineWidth.Changed += value => Set(ref _options.ShapeLineWidth, value);
         _fill.Click += (_, _) => ColourAsked?.Invoke(true);
+        _shapeFill.Click += (_, _) => ColourAsked?.Invoke(true);
         _gradientFill.Click += (_, _) => ColourAsked?.Invoke(false);
 
         _brushMode.SelectedIndex = 0;
@@ -359,15 +358,14 @@ internal sealed partial class ToolOptionsBar : Border
         _wandAll.SelectedIndex = 0;
         _wandAll.SelectionChanged += (_, _) => Set(ref _options.WandAllLayers, _wandAll.SelectedIndex == 1);
 
-        _shapeKind.ItemsSource = new[] { "Rectangle", "Ellipse", "Line" };
         _shapeKind.SelectedIndex = 0;
-        _shapeKind.SelectionChanged += (_, _) =>
+        _shapeKind.Changed += index =>
         {
-            var shape = (ShapeKind)Math.Max(0, _shapeKind.SelectedIndex);
+            var shape = (ShapeKind)index;
             Set(ref _options.Shape, shape);
             // The corner radius belongs to a rectangle and the width to a line, so which of the two shows
             // follows the kind that was just picked.
-            On("corner", shape != ShapeKind.Line);
+            On("corner", shape == ShapeKind.Rectangle);
             On("linewidth", shape == ShapeKind.Line);
         };
         _gradientKind.ItemsSource = new[] { "Linear", "Radial", "Angle", "Reflected", "Diamond" };
@@ -384,8 +382,10 @@ internal sealed partial class ToolOptionsBar : Border
         _flipH.Click += (_, _) => FlipAsked?.Invoke(true);
         _flipV.Click += (_, _) => FlipAsked?.Invoke(false);
         _editText.Click += (_, _) => TextAsked?.Invoke();
+        _brushes.Click += (_, _) => BrushesAsked?.Invoke();
 
         Cell("mode", _brushMode);
+        Cell("mode", _brushes);
         Cell("smear", _smearMode);
         Cell("heal", _healMode);
         Cell("clone", _aligned);
@@ -416,6 +416,8 @@ internal sealed partial class ToolOptionsBar : Border
         Cell("shape", _shapeKind);
         Cell("corner", _corner);
         Cell("linewidth", _lineWidth);
+        Cell("shape", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6,
+            Children = { new TextBlock { [!TextBlock.TextProperty] = UiText.Bind("Fill"), VerticalAlignment = VerticalAlignment.Center }, _shapeFill } });
         Cell("crop", _cropRatio);
         Cell("crop", _cropApply);
         Cell("crop", _cropCancel);
@@ -472,6 +474,28 @@ internal sealed partial class ToolOptionsBar : Border
     {
         if (!_named.TryGetValue(name, out var cells)) return;
         foreach (var cell in cells) cell.IsVisible = shown;
+    }
+
+    private void FitSliders()
+    {
+        if (Overflow.Bounds.Width <= 0 || _cells.DesiredSize.Width <= 0) return;
+        var sliders = new[] { _size, _hardness, _smoothing, _opacity, _blurRadius, _corner, _lineWidth }
+            .Where(control => control.IsVisible || (ReferenceEquals(control, _blurRadius) && _smearMode.IsVisible)).ToArray();
+        if (sliders.Any(control => control.IsInteracting)) return;
+        // Calculate from the full row, so changing to compact mode does not make it oscillate back.
+        var fullWidth = _cells.DesiredSize.Width + sliders.Where(control => control.IsVisible && !control.SliderExpanded)
+            .Sum(control => control.ExpandedWidthDifference);
+        if (_smearMode.IsVisible && !_blurRadius.IsVisible) fullWidth += _blurRadius.ExpandedNaturalWidth + _cells.Spacing;
+        var compact = new HashSet<InlineNumber>();
+        foreach (var control in sliders)
+        {
+            if (fullWidth <= Overflow.Bounds.Width - 2) break;
+            compact.Add(control);
+            fullWidth -= control.ExpandedWidthDifference;
+        }
+        foreach (var control in sliders) control.ExpandSlider(!compact.Contains(control));
+        Overflow.HorizontalScrollBarVisibility = fullWidth > Overflow.Bounds.Width
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Auto : Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden;
     }
 
     /// <summary>A clickable colour of the bar's own, which the window finds out about rather than owns.</summary>

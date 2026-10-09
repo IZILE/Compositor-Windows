@@ -66,7 +66,9 @@ public sealed record BrushSettings(
     /// brush's own size, and its own default of 5. It is a setting of its own rather than something worked out
     /// from the diameter, so a wide brush can still be a gentle one.
     /// </summary>
-    double BlurRadius = 5);
+    double BlurRadius = 5,
+    /// <summary>An imported static mask; null keeps the original round tip.</summary>
+    BrushTip? Tip = null);
 
 /// <summary>
 /// Painting a stroke into a layer's own pixels. Mouse samples arrive in document coordinates, so they are
@@ -96,6 +98,9 @@ public static partial class BrushEdits
     /// <summary>How far apart dabs sit: a fraction of the diameter, so a soft tip is stamped closer.</summary>
     public static double Spacing(double diameter, double hardness) =>
         Math.Max(0.25, diameter * (hardness >= 1 ? 0.015 : 0.025));
+
+    public static double Spacing(BrushSettings settings) => settings.Tip is { } tip
+        ? Math.Max(0.25, settings.Diameter * tip.Spacing) : Spacing(settings.Diameter, settings.Hardness);
 
     /// <summary>
     /// Gives a blank layer pixels the size of its rectangle, which is when the Mac build allocates them: on
@@ -357,10 +362,10 @@ public static partial class BrushEdits
         SKBitmap? sample = null;
         try
         {
+            if (settings.Mode == BrushMode.Clone && settings.CloneAllLayers) return Composite(document);
             sample = DocumentRenderer.Allocate(document.Width, document.Height);
             using (var canvas = new SKCanvas(sample))
             {
-                if (settings.Mode == BrushMode.Clone && settings.CloneAllLayers) return Composite(document);
                 DocumentRenderer.DrawLayerPixels(canvas, layer);
             }
             if (settings.Mode == BrushMode.Blur)
@@ -477,7 +482,7 @@ public static partial class BrushEdits
     /// selection scales each pixel, so a dab that straddles a feathered edge is painted in part.
     /// </summary>
     private static void Stamp(float[] coverage, int width, int height, SKPoint centre, double radius,
-        SKMatrix toDocument, SKMatrix toPixel, bool hard, double hardness, Clip selection)
+        SKMatrix toDocument, SKMatrix toPixel, bool hard, double hardness, Clip selection, BrushTip? customTip = null)
     {
         // The document square around the dab, brought into pixels: a generous box, since the transform may
         // turn it.
@@ -513,8 +518,8 @@ public static partial class BrushEdits
                 if (hard && coverage[index] > 0) continue;
                 var at = translation ? new SKPoint(x + 0.5f + toDocument.TransX, y + 0.5f + toDocument.TransY)
                     : toDocument.MapPoint(x + 0.5f, y + 0.5f);
-                var distance = Math.Sqrt(Math.Pow(at.X - centre.X, 2) + Math.Pow(at.Y - centre.Y, 2));
-                var tip = Tip(distance, radius, hardness) * selection.At(at.X, at.Y);
+                var distance = customTip is null ? Math.Sqrt(Math.Pow(at.X - centre.X, 2) + Math.Pow(at.Y - centre.Y, 2)) : 0;
+                var tip = (customTip?.Sample(at.X - centre.X, at.Y - centre.Y, radius * 2) ?? Tip(distance, radius, hardness)) * selection.At(at.X, at.Y);
                 if (tip <= 0) continue;
                 // Overlapping dabs within one stroke must not build up: they take the larger coverage, or
                 // blend, so the stroke's opacity is what caps it.

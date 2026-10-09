@@ -1,4 +1,4 @@
-# Windows community build 0.6.3
+# Windows community build 0.6.4
 
 This directory contains the Windows C# / Avalonia application, core engine, CLI, tests,
 installer and release tools. See [the repository README](../README.md) for download and build commands,

@@ -1,0 +1,30 @@
+{
+  "document": "1024x768, one generated raster layer, 128-point path, diameter 40, hardness/opacity 0.5",
+  "measurement": "CPU calculation; one warm-up and three measured samples, no physical presentation timing",
+  "results": [
+    {
+      "name": "Clone",
+      "median_ms": 140.5197,
+      "worst_ms": 149.1965,
+      "pixel_sha256": "ccf1f624ebaa7b8652e160cc21671e09b6fc680c80a8edaf041272a766e2190b"
+    },
+    {
+      "name": "Blur",
+      "median_ms": 281.3904,
+      "worst_ms": 285.0904,
+      "pixel_sha256": "5a497e8f0437075c800942bb3f478378ca6fd5ba68c4efa4a440403b7d0a8089"
+    },
+    {
+      "name": "Liquify",
+      "median_ms": 134.1805,
+      "worst_ms": 142.7933,
+      "pixel_sha256": "2cec7a52ef65a7b4d264794d28d42384658f0b92c6956ec1c05440faf8f06438"
+    },
+    {
+      "name": "Smudge",
+      "median_ms": 49.0515,
+      "worst_ms": 50.0395,
+      "pixel_sha256": "50909ad07b0f07cf6dea9814b1a26fd8419aaae4404839c03acf7d65133fcdb2"
+    }
+  ]
+}

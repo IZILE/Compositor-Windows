@@ -396,8 +396,8 @@ public sealed partial class MainWindow : Window
         // The options bar is a face on the same settings the Tools menu moves, so either one marks the other.
         _optionsBar = new ToolOptionsBar(_options);
         _optionsBar.Changed += OptionsChanged;
+        _optionsBar.BrushesAsked += () => _ = ChooseBrush();
         _optionsBar.WandSettingAsked += which => _ = SetWand(which);
-        _optionsBar.ShapeSettingAsked += which => _ = SetShape(which);
         _optionsBar.ColourAsked += ChooseColour;
         _optionsBar.FlipAsked += horizontally =>
         {
@@ -662,6 +662,7 @@ public sealed partial class MainWindow : Window
                                 Command("_Hardness…", () => _ = SetBrush(BrushSetting.Hardness)),
                                 Command("_Opacity…", () => _ = SetBrush(BrushSetting.Opacity)),
                                 Command("_Color…", () => _ = SetBrush(BrushSetting.Colour)),
+                                Command("Import / choose _brushes…", () => _ = ChooseBrush()),
                                 new Separator(),
                                 Command("Spot healing: _Content-Aware", () => Heal(HealingMode.ContentAware)),
                                 Command("Spot healing: Create _Texture", () => Heal(HealingMode.CreateTexture)),
@@ -3480,7 +3481,7 @@ public sealed partial class MainWindow : Window
         }
         ShowCropBox();
         _canvas.TransformEnabled = tool == Tool.Move;
-        _canvas.ShapePreviewFor = tool == Tool.Shape ? dragged => ShapePlan(dragged) : null;
+        _canvas.ShapePreviewFor = tool == Tool.Shape ? (dragged, anchor, end) => ShapePlan(dragged, anchor, end) : null;
         _canvas.GuidesDraggable = tool == Tool.Move;
         ShowTransformBox();
         _canvas.PaintEnabled = tool is Tool.Brush or Tool.Clone or Tool.Blur or Tool.Liquify or Tool.Smudge or Tool.Heal;
@@ -3555,28 +3556,6 @@ public sealed partial class MainWindow : Window
         Say($"Magic wand: tolerance {_options.Wand.Tolerance}, sampling {_options.Wand.Radius} pixels");
     }
 
-    /// <summary>Asks for one of the Shape tool's amounts, as the options bar's own buttons do.</summary>
-    private async Task SetShape(ShapeSetting which)
-    {
-        if (which == ShapeSetting.CornerRadius)
-        {
-            if (await Ask("Corner radius", "Pixels, 0 for square corners", $"{_options.ShapeCornerRadius:0}", 0, 1000)
-                is { } radius)
-            {
-                _options.ShapeCornerRadius = radius;
-            }
-        }
-        else
-        {
-            if (await Ask("Line width", "Pixels, 1 to 200", $"{_options.ShapeLineWidth:0}", 1, 200) is { } width)
-            {
-                _options.ShapeLineWidth = width;
-            }
-        }
-        OptionsChanged();
-        Say($"Shape: {_options.Shape}, radius {_options.ShapeCornerRadius:0}, width {_options.ShapeLineWidth:0}");
-    }
-
     /// <summary>
     /// An option was changed at the bar. What a change from the Tools menu does is done here too — the canvas is
     /// given the brush, the menu rows that stand for the same setting are ticked, and the status line is
@@ -3585,6 +3564,7 @@ public sealed partial class MainWindow : Window
     private void OptionsChanged()
     {
         PushBrush();
+        foreach (var (kind, item) in _shapeKindItems) item.IsChecked = kind == _options.Shape;
         _eraseToggle.IsChecked = _options.Erase;
         _paintOnMask.IsChecked = _options.PaintOnMask;
         ShowColours();
@@ -3611,9 +3591,11 @@ public sealed partial class MainWindow : Window
     /// foreground swatch is the same colour, so it is shown whenever the brush moves.</summary>
     private void PushBrush()
     {
+        _canvas.ShapeKind = _options.Shape;
         _rail.ShowBrushMode(_options.Erase);
         _canvas.Brush = _options.Brush with
         {
+            Tip = _tool == Tool.Brush ? _options.Brush.Tip : null,
             Erasing = _options.Erase,
             Mode = _tool switch
             {
@@ -3814,6 +3796,7 @@ public sealed partial class MainWindow : Window
     {
         _options.Shape = kind;
         foreach (var (which, item) in _shapeKindItems) item.IsChecked = which == kind;
+        if (_optionsBar is not null) OptionsChanged();
     }
 
     /// <summary>Asks for one of the two numbers that shape a shape.</summary>
@@ -4742,6 +4725,18 @@ public sealed partial class MainWindow : Window
     {
         FinishNumberTransform(); ApplyPersistentTransform();
         StartPreview(FilterPreview.Begin(document, layerID), layerID);
+    }
+
+    private async Task ChooseBrush()
+    {
+        if (await BrushLibraryDialog.Ask(this, _options.Brush) is not { } preset) return;
+        ApplyBrushPreset(preset);
+    }
+
+    private void ApplyBrushPreset(BrushPreset preset)
+    {
+        _options.Brush = _options.Brush with { Tip = preset.Tip, Hardness = preset.Hardness ?? _options.Brush.Hardness };
+        SetTool(Tool.Brush); OptionsChanged();
     }
 
     /// <summary>The same for a look that changes several layers at once, which is what a group distortion is.</summary>

@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+title 阶段 09b：0.6.3 已交付，扩展检查完成
+rectangle "已完成\n普通笔刷／橡皮擦增量处理\n工具栏稳定与菜单衔接\n900 项核心测试" as fix #254B3D
+rectangle "已完成\n原位置覆盖与可选目录检查\nGitHub 安装包／源码发布\n独立 Windows 十二组检查" as release #254B3D
+rectangle "当前交付\n桌面快捷方式打开 0.6.3\n中英与 Windows 操作保留\n18 项其他计算已测量" as current #4A4230
+rectangle "待优先修复\n液化／涂抹逐像素重复搜索\n图章／模糊与图层合成\n文件读写等待" as next #534035
+rectangle "仍待验证／完善\n复杂大图与极端参数\n物理 DPI 与 Mac 逐帧\n剩余 Mac 功能" as pending #393B42
+fix -down-> release
+release -down-> current
+current -down-> next
+next -down-> pending
+@enduml

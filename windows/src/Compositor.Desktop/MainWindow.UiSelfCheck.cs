@@ -12,7 +12,7 @@ namespace Compositor.Desktop;
 
 public sealed partial class MainWindow
 {
-    internal string UiSelfCheck(string sample, string output)
+    internal string UiSelfCheck(string sample, string output, bool brushOnly = false)
     {
         var report = new List<string>();
         void Check(bool good, string name)
@@ -57,6 +57,7 @@ public sealed partial class MainWindow
         Show();
         OpenInput(sample);
         Layout();
+        if (brushOnly) { BrushControlsSelfCheck(output, report); return string.Join(Environment.NewLine, report); }
         if (Environment.GetEnvironmentVariable("COMPOSITOR_MAC_QA_ONLY") == "1")
         {
             Width = 1920; Height = 780; Layout(); _canvas.Fit();
@@ -108,11 +109,20 @@ public sealed partial class MainWindow
             sizeField.Focus();
             this.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, null); Layout();
             Check(_canvas.Brush.Diameter == 65, $"{language}: number arrow steps update the actual brush");
-            var smoothing = _optionsBar.BrushSmoothing.Slider!;
-            smoothing.BringIntoView(); Layout();
-            Click(smoothing.TranslatePoint(new Point(smoothing.Bounds.Width * 0.5, smoothing.Bounds.Height / 2), this)!.Value); Layout();
+            var smoothingControl = _optionsBar.BrushSmoothing;
+            if (!smoothingControl.SliderExpanded)
+            {
+                smoothingControl.SliderButton!.BringIntoView(); Layout();
+                Click(Middle(smoothingControl.SliderButton!)); Layout();
+            }
+            var smoothing = smoothingControl.SliderExpanded ? smoothingControl.Slider! : smoothingControl.PopupSlider!;
+            var sliderRoot = TopLevel.GetTopLevel(smoothing)!;
+            var sliderPoint = smoothing.TranslatePoint(new Point(smoothing.Bounds.Width * 0.5, smoothing.Bounds.Height / 2), sliderRoot)!.Value;
+            sliderRoot.MouseDown(sliderPoint, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+            sliderRoot.MouseUp(sliderPoint, MouseButton.Left, RawInputModifiers.None); Layout();
             Check(_canvas.Brush.Smoothing is > 0.4 and < 0.6,
                 $"{language}: smoothing slider sets the brush's normalized smoothing");
+            if (smoothingControl.SliderPopup is { } smoothingPopup) smoothingPopup.IsOpen = false;
             _options.Brush = originalBrush; OptionsChanged();
             _optionsBar.Overflow.Offset = new Vector(); Layout();
             Photograph($"brush-narrow-{language}.png");
@@ -358,6 +368,7 @@ public sealed partial class MainWindow
         Check(_tabs.IndexOf(held) > 0 && ReferenceEquals(_open, held), "drag reorders a real tab and preserves its document");
         Photograph("tabs-reordered.png");
         _tabs.RemoveAll(tab => !ReferenceEquals(tab, held)); RefreshTabs();
+        BrushControlsSelfCheck(output, report);
         MacParitySelfCheck(output, report);
         Width = 1180; Height = 780; SetTool(Tool.Move); Layout(); _canvas.Fit();
         DesignSelfCheck(output, report);

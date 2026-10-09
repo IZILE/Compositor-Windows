@@ -35,6 +35,7 @@ internal static partial class Program
         if (args is ["--settings-path"]) { Console.WriteLine(UserData.DirectoryPath); return 0; }
         if (args is ["--performance", var performanceOutput]) return Performance(performanceOutput);
         if (args is ["--brush-performance", var brushOutput]) return BrushPerformance(brushOutput);
+        if (args is ["--stroke-tools-performance", var strokeToolsOutput]) return StrokeToolPerformance.Run(strokeToolsOutput);
         if (args is ["--stroke-preview", var strokeOutput])
         {
             Directory.CreateDirectory(strokeOutput); BuildHeadless().SetupWithoutStarting();
@@ -113,6 +114,7 @@ internal static partial class Program
         if (args is ["--lifecycle", var lifecycleOutput]) return Lifecycle(lifecycleOutput);
         if (args is ["--windows-integration", var integrationOutput]) return WindowsIntegration(integrationOutput);
         if (args is ["--ui-check", var uiOutput]) return UiCheck(uiOutput);
+        if (args is ["--brush-controls", var brushControlsOutput]) return UiCheck(brushControlsOutput, brushOnly: true);
         if (args is ["--dialog-check", var dialogCheckOutput]) return DialogCheck(dialogCheckOutput);
         // `--camera-raw` drives the Camera Raw panel without a pointer — opened on a layer, amounts moved, the
         // preview run, then Apply and Cancel — and draws the window with the panel still up, which is the only
@@ -546,7 +548,7 @@ internal static partial class Program
         finally { Directory.Delete(folder, recursive: true); }
     }
 
-    private static int UiCheck(string output)
+    private static int UiCheck(string output, bool brushOnly = false)
     {
         BuildHeadless().SetupWithoutStarting();
         output = Path.GetFullPath(output);
@@ -557,7 +559,7 @@ internal static partial class Program
         {
             var sample = Path.Combine(folder, "GettingStarted.comp");
             SampleProject.Create(sample);
-            Console.WriteLine(new MainWindow().UiSelfCheck(sample, output));
+            Console.WriteLine(new MainWindow().UiSelfCheck(sample, output, brushOnly));
             foreach (var language in new[] { "zh-CN", "en" })
             {
                 UiText.Language = language;
@@ -709,7 +711,7 @@ internal static partial class Program
             // The shape tool's drag preview: an ellipse in a colour of its own, over a box of the canvas.
             var box = SKRectI.Create(80, 60, 240, 160);
             view.ShapeKind = Compositor.Core.Format.ShapeKind.Ellipse;
-            view.ShapePreviewFor = dragged => (new Compositor.Core.Format.LayerShapeStyle
+            view.ShapePreviewFor = (dragged, _, _) => (new Compositor.Core.Format.LayerShapeStyle
             {
                 Kind = Compositor.Core.Format.ShapeKind.Ellipse, Red = 1, Green = 0.2, Blue = 0.1,
             }, dragged);

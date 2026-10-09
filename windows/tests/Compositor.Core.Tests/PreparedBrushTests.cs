@@ -6,6 +6,20 @@ namespace Compositor.Core.Tests;
 
 public class PreparedBrushTests
 {
+    [Fact]
+    public void PreparedPaintDropsShapeMetadataAndUndoRestoresTheEditableShape()
+    {
+        using var document = new CanvasDocument(Guid.NewGuid(), 64, 64);
+        var id = ShapeEdits.Add(document, new Compositor.Core.Format.LayerShapeStyle {Kind = Compositor.Core.Format.ShapeKind.Rectangle}, SKRectI.Create(0,0,64,64), null)!.Value;
+        var layer = document.Layers.Single(); Assert.NotNull(layer.Shape);
+        var settings = new BrushSettings(Red:1);
+        using var stroke = BrushEdits.Prepare(document,id,settings)!; stroke.Append(new SKPoint(30,30));
+        var history = new DocumentHistory(); history.Begin("Brush",document,id);
+        Assert.True(stroke.TryCommit(document,id,settings)); history.End(document,id);
+        Assert.Null(layer.Shape);
+        Assert.NotNull(history.Undo()!.Value.Document!.Layers.Single().Shape);
+    }
+
     private static CanvasDocument Picture(bool blank = false, bool mask = false, bool transformed = false)
     {
         var document = new CanvasDocument(Guid.NewGuid(), 128, 96);

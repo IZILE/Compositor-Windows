@@ -74,7 +74,8 @@ foreach ($library in $assets.libraries.PSObject.Properties | Sort-Object Name) {
 $inventory += @('', 'The graph includes dependencies for other platforms; only Windows runtime files are bundled.',
     'LibRaw source: LibRaw-0.21.1.tar.gz; LGPL-2.1.txt. Binding: https://github.com/sdcb/Sdcb.LibRaw.',
     'Build with PublishSingleFile=false to use separate replaceable native libraries.',
-    'Inter font: OFL-Inter.txt. Original app and icon: repository MIT license.')
+    'Inter font: OFL-Inter.txt. Original app and icon: repository MIT license.',
+    'ABR sampled-tip layout reference: https://github.com/Agamnentzar/ag-psd; MIT license: ag-psd.txt.')
 $inventory | Set-Content -LiteralPath (Join-Path $licenses 'DEPENDENCIES.md') -Encoding utf8
 
 if (-not $Compiler) {

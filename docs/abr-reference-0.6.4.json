@@ -1,0 +1,7 @@
+{
+  "source": "https://github.com/Agamnentzar/ag-psd/tree/master/test/abr-read/sample-and-pattern",
+  "dimensions": "112x105",
+  "pixel_sha256": "7058e33e8cf536026bb86ef28dc7bcf3f19e1595d81368f5603603ad566b32db",
+  "independent_reference": "All alpha bytes exactly match the upstream decoded PNG",
+  "Skipped": 0
+}

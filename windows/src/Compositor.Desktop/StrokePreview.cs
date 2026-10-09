@@ -16,13 +16,15 @@ internal sealed class StrokePreview : IDisposable
     private SKPoint _origin;
     private BrushSettings? _settings;
     private int _drawn;
+    private SKBitmap? _tipImage;
+    private double _nextDab;
     internal int SegmentsDrawn { get; private set; }
     internal int Rebuilds { get; private set; }
 
     internal WriteableBitmap? Get(Size size, double scale, double zoom, SKPoint origin,
         BrushSettings settings, IReadOnlyList<SKPoint> points)
     {
-        if (points.Count < 2 || size.Width <= 0 || size.Height <= 0) return null;
+        if (points.Count < (settings.Tip is null ? 2 : 1) || size.Width <= 0 || size.Height <= 0) return null;
         var width = Math.Max(1, (int)Math.Ceiling(size.Width * scale));
         var height = Math.Max(1, (int)Math.Ceiling(size.Height * scale));
         // A zoomed-out or very large display must not allocate an unbounded preview.
@@ -42,6 +44,7 @@ internal sealed class StrokePreview : IDisposable
                 PixelFormats.Bgra8888, AlphaFormat.Premul);
             _size = size; _scale = scale; _zoom = zoom; _origin = origin; _settings = settings;
             Rebuilds++;
+            if (settings.Tip is not null) { _tipImage = settings.Tip.Image(); _nextDab = BrushEdits.Spacing(settings); }
         }
         if (_drawn == points.Count) return _image;
         using var buffer = _image!.Lock();
@@ -58,6 +61,36 @@ internal sealed class StrokePreview : IDisposable
             Style = SKPaintStyle.Stroke, IsAntialias = true,
         };
         SKPoint Screen(SKPoint point) => new((float)((point.X - origin.X) * zoom), (float)((point.Y - origin.Y) * zoom));
+        if (settings.Tip is { } tip)
+        {
+            using var filter = SKColorFilter.CreateBlendMode(pen.Color, SKBlendMode.SrcIn);
+            using var stamp = new SKPaint { ColorFilter = filter, IsAntialias = true };
+            var ratio = settings.Diameter * zoom / Math.Max(tip.Width, tip.Height);
+            void Dab(SKPoint point)
+            {
+                var at = Screen(point); var w = (float)(tip.Width * ratio); var h = (float)(tip.Height * ratio);
+                canvas.DrawBitmap(_tipImage!, new SKRect(at.X - w / 2, at.Y - h / 2, at.X + w / 2, at.Y + h / 2),
+                    new SKSamplingOptions(SKFilterMode.Linear), stamp);
+            }
+            if (_drawn == 0) Dab(points[0]);
+            for (var index = Math.Max(1, _drawn); index < points.Count; index++)
+            {
+                var from = points[index - 1]; var to = points[index];
+                var dx = to.X - from.X; var dy = to.Y - from.Y;
+                var length = Math.Sqrt((double)dx * dx + (double)dy * dy);
+                if (length > 0)
+                {
+                    while (_nextDab <= length)
+                    {
+                        Dab(new SKPoint((float)(from.X + dx * _nextDab / length), (float)(from.Y + dy * _nextDab / length)));
+                        _nextDab += BrushEdits.Spacing(settings);
+                    }
+                    _nextDab -= length;
+                }
+                SegmentsDrawn++;
+            }
+            canvas.Flush(); _drawn = points.Count; return _image;
+        }
         for (var index = Math.Max(1, _drawn); index < points.Count; index++)
         {
             canvas.DrawLine(Screen(points[index - 1]), Screen(points[index]), pen);
@@ -69,5 +102,6 @@ internal sealed class StrokePreview : IDisposable
     public void Dispose()
     {
         _image?.Dispose(); _image = null; _drawn = 0; _settings = null;
+        _tipImage?.Dispose(); _tipImage = null;
     }
 }

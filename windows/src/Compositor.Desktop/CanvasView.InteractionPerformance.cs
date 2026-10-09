@@ -33,7 +33,7 @@ public sealed partial class CanvasView
             PreviewGradient(new SKPoint(200, 300), new SKPoint(1200, 700));
             Measure("gradient-line", index => _gradientEnd = new SKPoint(1200 + index * 2, 700));
             _gradientDrag = false;
-            ShapePreviewFor = box => (new LayerShapeStyle { Kind = ShapeKind.Rectangle, Red = 0.3, Green = 0.6, Blue = 0.9, CornerRadius = 20 }, box);
+            ShapePreviewFor = (box, _, _) => (new LayerShapeStyle { Kind = ShapeKind.Rectangle, Red = 0.3, Green = 0.6, Blue = 0.9, CornerRadius = 20 }, box);
             PreviewShape(SKRectI.Create(200, 200, 1600, 1000));
             Measure("shape-preview-repeated", _ => { });
             Measure("shape-preview-resize", index => _shapeBox = SKRectI.Create(200, 200, 1600 + index, 1000 + index));

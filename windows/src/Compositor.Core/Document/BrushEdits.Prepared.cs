@@ -25,25 +25,25 @@ public static partial class BrushEdits
             _region = document.Selection.CoverageRect(document.Width, document.Height);
             _clip = document.Selection.Coverage(_region);
             Coverage = new float[checked(width * height)];
-            _next = Spacing(settings.Diameter, settings.Hardness);
+            _next = Spacing(settings);
         }
         internal void Append(SKPoint point)
         {
             var selection = new Clip(_clip is null ? default : _clip.GetPixelSpan(), _clip?.RowBytes ?? 0, _region);
             var radius = _settings.Diameter / 2;
-            var hard = _settings.Hardness >= 1;
+            var hard = _settings.Tip is null && _settings.Hardness >= 1;
             if (_previous is not { } from)
-                Stamp(Coverage, _width, _height, point, radius, _toDocument, _toPixel, hard, _settings.Hardness, selection);
+                Stamp(Coverage, _width, _height, point, radius, _toDocument, _toPixel, hard, _settings.Hardness, selection, _settings.Tip);
             else
             {
                 var dx = point.X - from.X; var dy = point.Y - from.Y;
                 var length = Math.Sqrt((double)dx * dx + (double)dy * dy);
                 if (length <= 0) return;
-                var spacing = Spacing(_settings.Diameter, _settings.Hardness);
+                var spacing = Spacing(_settings);
                 while (_next <= length)
                 {
                     var at = new SKPoint((float)(from.X + dx * _next / length), (float)(from.Y + dy * _next / length));
-                    Stamp(Coverage, _width, _height, at, radius, _toDocument, _toPixel, hard, _settings.Hardness, selection);
+                    Stamp(Coverage, _width, _height, at, radius, _toDocument, _toPixel, hard, _settings.Hardness, selection, _settings.Tip);
                     _next += spacing;
                 }
                 _next -= length;
@@ -138,6 +138,7 @@ public static partial class BrushEdits
             {
                 Apply(painted, _coverage.Coverage, settings);
                 layer.Asset = ImportedImage.Create(painted, layer.Asset?.Name ?? layer.Name);
+                layer.Shape = null; layer.Text = null;
             }
             Dispose(); return true;
         }

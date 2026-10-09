@@ -240,7 +240,10 @@ public sealed partial class CanvasView : Control
     private ShapePreviewPlan? _shapePlan;
     private SKBitmap? _shapePreview;
     private WriteableBitmap? _shapePreviewImage;
-    private SKRectI _shapePreviewBox;
+    private readonly record struct ShapePreviewKey(Format.ShapeKind Kind, double Red, double Green, double Blue,
+        double Radius, double? Width, Format.JsonPoint? Start, Format.JsonPoint? End, SKRectI Box, SKRectI Placement);
+    private ShapePreviewKey? _shapePreviewKey;
+    internal SKBitmap? ShapeDraftPixels => _shapePreview;
     private SKRectI _shapePreviewAt;
     private SKPoint _shapeAnchor;
     private SKRectI _shapeBox;
@@ -347,7 +350,7 @@ public sealed partial class CanvasView : Control
     private SelectionMode _draftMode = SelectionMode.Replace;
 
     private BrushSettings _brush = new();
-    public BrushSettings Brush { get => _brush; set { _brush = value; UpdateBrushCursor(); } }
+    public BrushSettings Brush { get => _brush; set { _brush = value; UpdateBrushCursor(); if (_shaping) InvalidateVisual(); } }
 
     /// <summary>Handed the finished stroke, in document pixels.</summary>
     public Action<IReadOnlyList<SKPoint>>? StrokeFinished { get; set; }
@@ -820,14 +823,16 @@ public sealed partial class CanvasView : Control
     private void DrawShapePreview(DrawingContext context)
     {
         if (ShapePreviewFor is not { } ask || _shapeBox.Width <= 0 || _shapeBox.Height <= 0) return;
-        if (_shapePreviewBox != _shapeBox)
+        var (style, at) = ask(_shapeBox, _shapeAnchor, _shapeEnd);
+        var key = new ShapePreviewKey(style.Kind, style.Red, style.Green, style.Blue, style.CornerRadius,
+            style.LineWidth, style.Start, style.End, _shapeBox, at);
+        if (_shapePreviewKey != key)
         {
-            // Only when the box has changed: a redraw that moves nothing should not build it again.
-            var (style, at) = ask(_shapeBox);
+            // Include style and line endpoints: another shape can share the exact same bounds.
             _shapePreview?.Dispose();
             _shapePreview = ShapeEdits.Image(style, Math.Max(1, at.Width), Math.Max(1, at.Height));
             _shapePreviewImage?.Dispose(); _shapePreviewImage = _shapePreview is { } pixels ? ToImage(pixels) : null;
-            _shapePreviewBox = _shapeBox;
+            _shapePreviewKey = key;
             _shapePreviewAt = at;
         }
         if (_shapePreviewImage is not { } image) return;
@@ -837,7 +842,7 @@ public sealed partial class CanvasView : Control
     }
 
     /// <summary>What a shape being dragged will be made of: the style, and the box its pixels will cover.</summary>
-    public delegate (LayerShapeStyle Style, SKRectI Box) ShapePreviewPlan(SKRectI dragged);
+    public delegate (LayerShapeStyle Style, SKRectI Box) ShapePreviewPlan(SKRectI dragged, SKPoint anchor, SKPoint end);
 
     /// <summary>The app's answer to what the shape being dragged will be made of, or null when the tool that
     /// is not the shape tool is in use.</summary>
@@ -869,7 +874,7 @@ public sealed partial class CanvasView : Control
         _shapePreview?.Dispose();
         _shapePreviewImage?.Dispose(); _shapePreviewImage = null;
         _shapePreview = null;
-        _shapePreviewBox = default;
+        _shapePreviewKey = null;
         _shapePreviewAt = default;
     }
 

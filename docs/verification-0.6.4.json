@@ -1,0 +1,120 @@
+{
+  "version": "0.6.4",
+  "core_tests_passed": 962,
+  "ui_assertions_passed": 3561,
+  "dialog_cases_en_zh": 94,
+  "published_checks": [
+    {
+      "name": "ui",
+      "exit_code": 0,
+      "report_lines": 3561,
+      "pass_lines": 3561
+    },
+    {
+      "name": "dialogs",
+      "exit_code": 0,
+      "report_lines": 95,
+      "pass_lines": 95
+    },
+    {
+      "name": "windows-en",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "windows-zh",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "lifecycle",
+      "exit_code": 0,
+      "report_lines": 26,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-en",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-zh",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "shortcuts",
+      "exit_code": 0,
+      "report_lines": 117,
+      "pass_lines": 0
+    },
+    {
+      "name": "camera-raw",
+      "exit_code": 0,
+      "report_lines": 14,
+      "pass_lines": 0
+    },
+    {
+      "name": "performance",
+      "exit_code": 0,
+      "report_lines": 23,
+      "pass_lines": 13
+    },
+    {
+      "name": "native-icons",
+      "exit_code": 0,
+      "report_lines": 21,
+      "pass_lines": 21
+    },
+    {
+      "name": "brush-performance",
+      "exit_code": 0,
+      "report_lines": 19,
+      "pass_lines": 0
+    },
+    {
+      "name": "stroke-tools-performance",
+      "exit_code": 0,
+      "report_lines": 8,
+      "pass_lines": 4
+    }
+  ],
+  "exe_sha256": "2c5411f6085fd7d8f53ea8489a7002a6108bda8d96aeacb30f6a1ba114e1ebd1",
+  "stroke_final_pixel_hashes_unchanged": true,
+  "brush_size_slider_and_numeric_input": true,
+  "adaptive_toolbar_widths": [
+    800,
+    1180,
+    1680
+  ],
+  "shape_canvas_and_preview_regressions": "passed",
+  "abr_static_sampled_tips_only": true,
+  "abr_versions_tested": [
+    1,
+    2,
+    6,
+    7,
+    9,
+    10
+  ],
+  "real_abr_independent_alpha_comparison": "exact",
+  "performance_is_physical_fps": false,
+  "remaining": [
+    "ABR dynamic descriptors and procedural tips",
+    "incremental warp rendering",
+    "clone and blur latency",
+    "complex layer composition",
+    "Mac live animation and physical DPI comparison"
+  ],
+  "platform": "Windows x64",
+  "installer_first_repeat_upgrade_uninstall": "passed",
+  "settings_preserved": "passed",
+  "installer_destination_selectable": true,
+  "installer_sha256": "e99df99c61ea61c5efb581f335edb278d0c20e9db6a8641d65e74e007716851c",
+  "trimmed_build_shipped": false,
+  "new_external_abr_dependencies": false
+}

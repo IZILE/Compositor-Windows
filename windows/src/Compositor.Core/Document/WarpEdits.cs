@@ -55,7 +55,7 @@ public static class WarpEdits
         {
             var stroke = new Stroke(work, mode, settings);
             foreach (var point in points) stroke.Append(point);
-            if (stroke.Dabs.Count == 0) return false;
+            if (stroke.DabCount == 0) return false;
             return StrokeInto(layer, work, stroke, asset);
         }
     }
@@ -81,14 +81,13 @@ public static class WarpEdits
         var source2 = work.GetPixelSpan();
         var stride = work.RowBytes;
         var target = painted.GetPixelSpan();
-        var radius = (stroke.Diameter + 4) / 2;
         var covered = 0;
         for (var y = 0; y < height; y++)
         {
             for (var x = 0; x < width; x++)
             {
                 var at = toDocument.MapPoint(x + 0.5f, y + 0.5f);
-                if (!stroke.Covered(at, radius)) continue;
+                if (!stroke.Covered(at)) continue;
                 var sx = (int)Math.Floor(at.X);
                 var sy = (int)Math.Floor(at.Y);
                 if (sx < 0 || sy < 0 || sx >= work.Width || sy >= work.Height) continue;
@@ -132,6 +131,7 @@ public static class WarpEdits
         private readonly int _radius;
         private readonly int _width;
         private readonly int _height;
+        private readonly WarpCoverageIndex _coverage;
         private SKPoint? _last;
         /// <summary>Smudge: the colour the brush is carrying, a (2r+1)² square of floats.</summary>
         private float[] _carried = [];
@@ -148,23 +148,14 @@ public static class WarpEdits
             _radius = (int)Math.Ceiling(_diameter / 2);
             _width = work.Width;
             _height = work.Height;
+            _coverage = new WarpCoverageIndex((_diameter + 4) / 2);
         }
 
         /// <summary>Every dab's middle, in document pixels, which is what tells whether the brush passed over a place.</summary>
-        public List<SKPoint> Dabs { get; } = [];
+        public int DabCount => _coverage.Count;
 
-        /// <summary>The brush's width in document pixels, which is how wide a dab reaches.</summary>
-        public double Diameter => _diameter;
-
-        /// <summary>Whether the brush passed within <paramref name="radius"/> of a document point.</summary>
-        public bool Covered(SKPoint point, double radius)
-        {
-            foreach (var dab in Dabs)
-            {
-                if (Math.Sqrt(Math.Pow(point.X - dab.X, 2) + Math.Pow(point.Y - dab.Y, 2)) <= radius) return true;
-            }
-            return false;
-        }
+        /// <summary>Whether the brush passed over this point, with the original circular rim.</summary>
+        public bool Covered(SKPoint point) => _coverage.Covers(point);
 
         /// <summary>The path continued to <paramref name="point"/>, dabbing all the way.</summary>
         public void Append(SKPoint point)
@@ -187,7 +178,7 @@ public static class WarpEdits
                     (float)(from.X + (point.X - from.X) * t), (float)(from.Y + (point.Y - from.Y) * t));
                 if (_mode == WarpMode.Smudge) Smudge(next);
                 else Push(previous, next);
-                Dabs.Add(next);
+                _coverage.Add(next);
                 previous = next;
             }
             _last = point;

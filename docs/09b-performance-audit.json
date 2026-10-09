@@ -1,0 +1,152 @@
+{
+  "source_version": "0.6.3",
+  "measurement": "Direct core CPU, one warm-up and three measured samples, synthetic image; not physical UI latency or FPS",
+  "brush_path": "1024x768, 128 points, diameter 40, hardness 0.5, opacity 0.5; healing 3 points, diameter 30",
+  "results": [
+    {
+      "name": "Clone",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 159.86,
+      "worst_ms": 205.79
+    },
+    {
+      "name": "Blur",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 285.11,
+      "worst_ms": 286.05
+    },
+    {
+      "name": "Liquify",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 18074.17,
+      "worst_ms": 18154.55
+    },
+    {
+      "name": "Smudge",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 6420.31,
+      "worst_ms": 6426.06
+    },
+    {
+      "name": "SpotHealing-small",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 14.65,
+      "worst_ms": 15.52
+    },
+    {
+      "name": "Gradient-linear-final",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 242.55,
+      "worst_ms": 242.63
+    },
+    {
+      "name": "Wand-contiguous",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 27.04,
+      "worst_ms": 28.34
+    },
+    {
+      "name": "GaussianBlur-final",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 171.56,
+      "worst_ms": 180.17
+    },
+    {
+      "name": "MotionBlur-final",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 306.19,
+      "worst_ms": 312.27
+    },
+    {
+      "name": "TonalContrast-final",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 42.33,
+      "worst_ms": 42.83
+    },
+    {
+      "name": "LensCorrection-final",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 22.26,
+      "worst_ms": 23.47
+    },
+    {
+      "name": "Project-save",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 62.44,
+      "worst_ms": 75.89
+    },
+    {
+      "name": "Project-load",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 4.12,
+      "worst_ms": 4.21
+    },
+    {
+      "name": "PNG-encode",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 57.16,
+      "worst_ms": 73.01
+    },
+    {
+      "name": "CameraRaw-final",
+      "width": 1024,
+      "height": 768,
+      "samples": 3,
+      "median_ms": 106.7483,
+      "worst_ms": 106.7815
+    },
+    {
+      "name": "Resize-final",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 16.7525,
+      "worst_ms": 17.1672
+    },
+    {
+      "name": "PNG-decode",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 4.2627,
+      "worst_ms": 4.3097
+    },
+    {
+      "name": "PNG-export-tiled",
+      "width": 2048,
+      "height": 1536,
+      "samples": 3,
+      "median_ms": 164.3398,
+      "worst_ms": 307.7256
+    }
+  ],
+  "remaining": "Warp coverage scans all dabs per output pixel; ordinary brush incremental work does not cover Clone, Blur, Heal or Warp modes."
+}
