@@ -1,0 +1,294 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:Compositor.Desktop">
+  <Styles.Resources>
+  <!-- AppKit-like feedback: only the state tint eases; input and dragging stay immediate. -->
+  <ControlTheme x:Key="MacButtonTheme" TargetType="Button">
+    <Setter Property="Background" Value="#3A3A3A" />
+    <Setter Property="BorderBrush" Value="#52666666" />
+    <Setter Property="BorderThickness" Value="0.5" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid>
+          <Border Name="buttonFace" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+            <Border.Transitions><Transitions>
+              <BrushTransition Property="Background" Duration="0:0:0.14" Easing="0,0,0.58,1" />
+              <BrushTransition Property="BorderBrush" Duration="0:0:0.14" Easing="0,0,0.58,1" />
+            </Transitions></Border.Transitions>
+          </Border>
+          <Border Name="feedback" Background="White" Opacity="0" IsHitTestVisible="False"
+                  CornerRadius="{TemplateBinding CornerRadius}">
+            <Border.Transitions><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+          </Border>
+          <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Padding="{TemplateBinding Padding}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True" />
+          <Border Name="focusRing" BorderBrush="#806EA5FF" BorderThickness="2" CornerRadius="{TemplateBinding CornerRadius}"
+                  IsHitTestVisible="False" IsVisible="False" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#feedback"><Setter Property="Opacity" Value="0.055" /></Style>
+    <Style Selector="^:pressed /template/ Border#feedback"><Setter Property="Opacity" Value="0.16" /></Style>
+    <Style Selector="^:focus-visible /template/ Border#focusRing"><Setter Property="IsVisible" Value="True" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+    <Style Selector="^.accent"><Setter Property="Background" Value="#2979F5" /><Setter Property="BorderBrush" Value="#8069A1FF" /></Style>
+    <Style Selector="^.accent /template/ Border#feedback"><Setter Property="Background" Value="Black" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacToggleTheme" TargetType="ToggleButton" BasedOn="{StaticResource MacButtonTheme}">
+    <Style Selector="^:checked"><Setter Property="Background" Value="#2979F5" /><Setter Property="BorderBrush" Value="#8069A1FF" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacStepperButtonTheme" TargetType="RepeatButton" BasedOn="{StaticResource MacButtonTheme}">
+    <Setter Property="Background" Value="#353535" /><Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="3" /><Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" /><Setter Property="MinWidth" Value="0" /><Setter Property="Focusable" Value="False" />
+  </ControlTheme>
+  <ControlTheme x:Key="MacStepperTheme" TargetType="ButtonSpinner">
+    <Setter Property="Template"><ControlTemplate>
+      <Border Name="spinnerFace" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+        <Border.Transitions><Transitions><BrushTransition Property="BorderBrush" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+        <DockPanel>
+          <StackPanel Name="PART_SpinnerPanel" DockPanel.Dock="Right" Orientation="Vertical" Width="18" Height="22"
+                      Margin="1" VerticalAlignment="Center" IsVisible="{TemplateBinding ShowButtonSpinner}">
+            <RepeatButton Name="PART_IncreaseButton" Height="11" Theme="{StaticResource MacStepperButtonTheme}">
+              <Path Width="7" Height="4" Data="M 0,3 L 3.5,0 L 7,3" Stroke="#DFFFFFFF" StrokeThickness="1" />
+            </RepeatButton>
+            <RepeatButton Name="PART_DecreaseButton" Height="11" Theme="{StaticResource MacStepperButtonTheme}">
+              <Path Width="7" Height="4" Data="M 0,0 L 3.5,3 L 7,0" Stroke="#DFFFFFFF" StrokeThickness="1" />
+            </RepeatButton>
+          </StackPanel>
+          <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center" Padding="{TemplateBinding Padding}" />
+        </DockPanel>
+      </Border>
+    </ControlTemplate></Setter>
+    <Style Selector="^:left /template/ StackPanel#PART_SpinnerPanel"><Setter Property="DockPanel.Dock" Value="Left" /></Style>
+    <Style Selector="^:focus-within /template/ Border#spinnerFace"><Setter Property="BorderBrush" Value="#B36EA5FF" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacLayerRowTheme" TargetType="ListBoxItem">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="Margin" Value="0,0,0,2" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="row" Background="{TemplateBinding Background}" CornerRadius="5">
+          <Border.Transitions><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+          <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Padding="{TemplateBinding Padding}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#row"><Setter Property="Background" Value="#0BFFFFFF" /></Style>
+    <Style Selector="^:selected /template/ Border#row"><Setter Property="Background" Value="#2BFFFFFF" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacMenuItemTheme" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+    <Setter Property="CornerRadius" Value="5" /><Setter Property="Padding" Value="8,3" /><Setter Property="Margin" Value="3,1" />
+    <Style Selector="^ /template/ Border#PART_LayoutRoot">
+      <Setter Property="Transitions"><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Setter>
+    </Style>
+    <Style Selector="^:selected /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="#2979F5" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacMenuBarTheme" TargetType="MenuItem" BasedOn="{StaticResource FluentTopLevelMenuItem}">
+    <Setter Property="CornerRadius" Value="6" /><Setter Property="Padding" Value="10,3" /><Setter Property="Margin" Value="2,3" />
+    <Style Selector="^ /template/ Border#PART_LayoutRoot">
+      <Setter Property="Transitions"><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Setter>
+    </Style>
+    <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="#1CFFFFFF" /></Style>
+    <Style Selector="^:selected /template/ Border#PART_LayoutRoot"><Setter Property="Background" Value="#2BFFFFFF" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacChoiceItemTheme" TargetType="ComboBoxItem">
+    <Setter Property="Padding" Value="8,3" /><Setter Property="MinHeight" Value="24" />
+    <Setter Property="CornerRadius" Value="5" /><Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template"><ControlTemplate>
+      <Border Name="choiceFace" Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}">
+        <Border.Transitions><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+        <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                          Padding="{TemplateBinding Padding}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalContentAlignment="Center" />
+      </Border>
+    </ControlTemplate></Setter>
+    <Style Selector="^:pointerover /template/ Border#choiceFace"><Setter Property="Background" Value="#2979F5" /></Style>
+    <Style Selector="^:selected /template/ Border#choiceFace"><Setter Property="Background" Value="#184B88" /></Style>
+    <Style Selector="^:selected:pointerover /template/ Border#choiceFace"><Setter Property="Background" Value="#2979F5" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacScrollThumbTheme" TargetType="Thumb">
+    <Setter Property="Template"><ControlTemplate>
+      <Border Name="scrollKnob" Background="#80A5A5A5" CornerRadius="4" Margin="2">
+        <Border.Transitions><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+      </Border>
+    </ControlTemplate></Setter>
+    <Style Selector="^:pointerover /template/ Border#scrollKnob"><Setter Property="Background" Value="#C0BBBBBB" /></Style>
+    <Style Selector="^:pressed /template/ Border#scrollKnob"><Setter Property="Background" Value="#DDD0D0D0" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacScrollBarTheme" TargetType="ScrollBar">
+    <Setter Property="Background" Value="Transparent" /><Setter Property="AllowAutoHide" Value="False" />
+    <Setter Property="Template"><ControlTemplate>
+      <Grid Background="Transparent">
+        <Track Name="PART_Track" Minimum="0" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value, Mode=TwoWay}"
+               ViewportSize="{TemplateBinding ViewportSize}" Orientation="{TemplateBinding Orientation}">
+          <Track.DecreaseButton><RepeatButton Name="PART_PageUpButton" Focusable="False" Background="Transparent"><RepeatButton.Template><ControlTemplate><Border Background="Transparent" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseButton>
+          <Track.IncreaseButton><RepeatButton Name="PART_PageDownButton" Focusable="False" Background="Transparent"><RepeatButton.Template><ControlTemplate><Border Background="Transparent" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.IncreaseButton>
+          <Track.Thumb><Thumb Name="scrollThumb" Theme="{StaticResource MacScrollThumbTheme}" /></Track.Thumb>
+        </Track>
+      </Grid>
+    </ControlTemplate></Setter>
+    <Style Selector="^:vertical"><Setter Property="Width" Value="10" /><Setter Property="MinWidth" Value="10" /></Style>
+    <Style Selector="^:vertical /template/ Track#PART_Track"><Setter Property="IsDirectionReversed" Value="True" /></Style>
+    <Style Selector="^:vertical /template/ Thumb#scrollThumb"><Setter Property="MinHeight" Value="24" /></Style>
+    <Style Selector="^:horizontal"><Setter Property="Height" Value="10" /><Setter Property="MinHeight" Value="10" /></Style>
+    <Style Selector="^:horizontal /template/ Thumb#scrollThumb"><Setter Property="MinWidth" Value="24" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacPopupTheme" TargetType="ComboBox">
+    <Setter Property="Background" Value="#353535" />
+    <Setter Property="BorderBrush" Value="#25666666" />
+    <Setter Property="BorderThickness" Value="0.5" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+    <Setter Property="MaxDropDownHeight" Value="420" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="*,18">
+          <Border Name="popupFace" Grid.ColumnSpan="2" Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}" />
+          <ContentControl Name="ContentPresenter" Content="{TemplateBinding SelectionBoxItem}"
+                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="{TemplateBinding Padding}"
+                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                          IsVisible="{TemplateBinding IsEditable, Converter={x:Static BoolConverters.Not}}" />
+          <TextBox Name="PART_EditableTextBox" BorderThickness="0" Background="Transparent" Padding="{TemplateBinding Padding}"
+                   Text="{TemplateBinding Text, Mode=TwoWay}" IsVisible="{TemplateBinding IsEditable}" />
+          <Path Grid.Column="1" Data="M 1,4 L 4,1 L 7,4 M 1,8 L 4,11 L 7,8" Stroke="#C0FFFFFF"
+                StrokeThickness="1.1" Width="8" Height="12" Margin="0,0,5,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+          <Border Name="popupFeedback" Grid.ColumnSpan="2" Background="White" Opacity="0" IsHitTestVisible="False"
+                  CornerRadius="{TemplateBinding CornerRadius}">
+            <Border.Transitions><Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+          </Border>
+          <Popup Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+                 MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+                 MaxHeight="{TemplateBinding MaxDropDownHeight}" PlacementTarget="popupFace" IsLightDismissEnabled="True">
+            <Border Background="#292929" BorderBrush="#35FFFFFF" BorderThickness="1" Padding="4" CornerRadius="6">
+              <ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+              </ScrollViewer>
+            </Border>
+          </Popup>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover /template/ Border#popupFeedback"><Setter Property="Opacity" Value="0.04" /></Style>
+    <Style Selector="^:pressed /template/ Border#popupFeedback"><Setter Property="Opacity" Value="0.1" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacSliderThumbTheme" TargetType="Thumb">
+    <Setter Property="Template"><ControlTemplate>
+      <Border Name="knob" Background="#E6E6E6" BorderBrush="#707070" BorderThickness="0.5" CornerRadius="6">
+        <Border.Transitions><Transitions><BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Border.Transitions>
+      </Border>
+    </ControlTemplate></Setter>
+    <Style Selector="^:pointerover /template/ Border#knob"><Setter Property="Background" Value="White" /></Style>
+    <Style Selector="^:pressed /template/ Border#knob"><Setter Property="Background" Value="#F5F5F5" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacSliderTheme" TargetType="Slider">
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Background" Value="#484848" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid MinHeight="22" Background="Transparent">
+          <Border Height="3" Margin="6,0" CornerRadius="1.5" VerticalAlignment="Center"
+                  Background="{TemplateBinding Background}" IsHitTestVisible="False" />
+          <Track Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                 Value="{TemplateBinding Value, Mode=TwoWay}" Orientation="{TemplateBinding Orientation}"
+                 IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+            <Track.DecreaseButton>
+              <Button Name="PART_DecreaseButton" Background="Transparent" Focusable="False" Height="22" MinHeight="22" Padding="0" HorizontalAlignment="Stretch" ClipToBounds="True">
+                <Button.Template><ControlTemplate><Grid Background="Transparent"><Border Height="3" Margin="6,0,0,0" CornerRadius="1.5" Background="#2979F5" VerticalAlignment="Center" /></Grid></ControlTemplate></Button.Template>
+              </Button>
+            </Track.DecreaseButton>
+            <Track.IncreaseButton>
+              <Button Name="PART_IncreaseButton" Background="Transparent" Focusable="False" Height="22" MinHeight="22" Padding="0" HorizontalAlignment="Stretch">
+                <Button.Template><ControlTemplate><Border Background="Transparent" /></ControlTemplate></Button.Template>
+              </Button>
+            </Track.IncreaseButton>
+            <Track.Thumb>
+              <Thumb Name="thumb" Width="12" Height="12" Theme="{StaticResource MacSliderThumbTheme}" />
+            </Track.Thumb>
+          </Track>
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.4" /></Style>
+  </ControlTheme>
+  <ControlTheme x:Key="MacCheckBoxTheme" TargetType="CheckBox">
+    <Setter Property="MinHeight" Value="22" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid ColumnDefinitions="14,6,*" Background="Transparent">
+          <Border Name="check" Width="14" Height="14" CornerRadius="3" BorderThickness="1"
+                  BorderBrush="#686868" Background="#292929" VerticalAlignment="Center">
+            <Border.Transitions><Transitions>
+              <BrushTransition Property="Background" Duration="0:0:0.08" Easing="0,0,0.58,1" />
+              <BrushTransition Property="BorderBrush" Duration="0:0:0.08" Easing="0,0,0.58,1" />
+            </Transitions></Border.Transitions>
+            <Grid>
+              <Path Name="tick" Data="M 2,6 L 5,9 L 10,3" Stroke="White" StrokeThickness="1.5" IsVisible="False" />
+              <Border Name="mixed" Width="7" Height="1.5" Background="White" IsVisible="False" />
+            </Grid>
+          </Border>
+          <ContentPresenter Name="PART_ContentPresenter" Grid.Column="2" VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                            RecognizesAccessKey="True" />
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:checked /template/ Border#check">
+      <Setter Property="Background" Value="#0A84FF" />
+      <Setter Property="BorderBrush" Value="#0A84FF" />
+    </Style>
+    <Style Selector="^:checked /template/ Path#tick"><Setter Property="IsVisible" Value="True" /></Style>
+    <Style Selector="^:indeterminate /template/ Border#check">
+      <Setter Property="Background" Value="#0A84FF" />
+      <Setter Property="BorderBrush" Value="#0A84FF" />
+    </Style>
+    <Style Selector="^:indeterminate /template/ Border#mixed"><Setter Property="IsVisible" Value="True" /></Style>
+    <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.45" /></Style>
+  </ControlTheme>
+  </Styles.Resources>
+  <Style Selector="Button"><Setter Property="Theme" Value="{StaticResource MacButtonTheme}" /></Style>
+  <Style Selector="ToggleButton"><Setter Property="Theme" Value="{StaticResource MacToggleTheme}" /></Style>
+  <Style Selector="ComboBox"><Setter Property="Theme" Value="{StaticResource MacPopupTheme}" /></Style>
+  <Style Selector="ComboBoxItem"><Setter Property="Theme" Value="{StaticResource MacChoiceItemTheme}" /></Style>
+  <Style Selector="MenuItem"><Setter Property="Theme" Value="{StaticResource MacMenuItemTheme}" /></Style>
+  <Style Selector="Menu &gt; MenuItem"><Setter Property="Theme" Value="{StaticResource MacMenuBarTheme}" /></Style>
+  <Style Selector="Menu"><Setter Property="ItemContainerTheme" Value="{StaticResource MacMenuBarTheme}" /></Style>
+  <Style Selector="ScrollBar"><Setter Property="Theme" Value="{StaticResource MacScrollBarTheme}" /></Style>
+  <Style Selector="Popup"><Setter Property="local:PopupMotion.Enabled" Value="True" /></Style>
+  <Style Selector="ToolTip"><Setter Property="CornerRadius" Value="7" /><Setter Property="Padding" Value="9,5" /><Setter Property="Background" Value="#EF292929" /><Setter Property="BorderBrush" Value="#35FFFFFF" /></Style>
+  <Style Selector="ListBox.layerlist"><Setter Property="ItemContainerTheme" Value="{StaticResource MacLayerRowTheme}" /></Style>
+  <Style Selector="ListBox"><Setter Property="ItemContainerTheme" Value="{StaticResource MacLayerRowTheme}" /></Style>
+  <Style Selector="ListBoxItem"><Setter Property="Theme" Value="{StaticResource MacLayerRowTheme}" /></Style>
+  <Style Selector="NumericUpDown"><Setter Property="TextAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" /><Setter Property="CornerRadius" Value="6" /><Setter Property="MinHeight" Value="24" /><Setter Property="FontSize" Value="12" /><Setter Property="Padding" Value="4,1" /><Setter Property="Background" Value="#1A1A1A" /><Setter Property="BorderBrush" Value="#18FFFFFF" /><Setter Property="BorderThickness" Value="0.5" /></Style>
+  <Style Selector="NumericUpDown /template/ ButtonSpinner#PART_Spinner"><Setter Property="Theme" Value="{StaticResource MacStepperTheme}" /></Style>
+  <Style Selector="TextBox"><Setter Property="CornerRadius" Value="6" /><Setter Property="Background" Value="#1A1A1A" /><Setter Property="BorderBrush" Value="#18FFFFFF" /><Setter Property="BorderThickness" Value="0.5" /></Style>
+  <Style Selector="TextBox.numeric"><Setter Property="TextAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" /><Setter Property="Padding" Value="4,3" /></Style>
+  <Style Selector="TextBox /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#1A1A1A" /><Setter Property="BorderBrush" Value="#18FFFFFF" /><Setter Property="BorderThickness" Value="0.5" />
+    <Setter Property="Transitions"><Transitions><BrushTransition Property="BorderBrush" Duration="0:0:0.08" Easing="0,0,0.58,1" /></Transitions></Setter>
+  </Style>
+  <Style Selector="TextBox:focus /template/ Border#PART_BorderElement"><Setter Property="BorderBrush" Value="#B36EA5FF" /><Setter Property="BorderThickness" Value="1" /></Style>
+  <Style Selector="Slider">
+    <Setter Property="Theme" Value="{StaticResource MacSliderTheme}" />
+  </Style>
+  <Style Selector="CheckBox"><Setter Property="Theme" Value="{StaticResource MacCheckBoxTheme}" /></Style>
+</Styles>

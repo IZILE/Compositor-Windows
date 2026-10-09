@@ -1,0 +1,25 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #FAFAFC
+skinparam shadowing false
+skinparam roundcorner 16
+skinparam ArrowColor #738095
+skinparam defaultTextAlignment center
+title 第 05a 阶段 · 控件与动画验证
+left to right direction
+rectangle "已完成\n文字宽度与数字居中\n统一圆角和反馈" as ui #D8F3DC
+rectangle "已通过\n871 核心测试\n2096 界面断言\n92 个双语弹窗" as qa #D8F3DC
+rectangle "已通过\n动画中间帧\n反向与快速切换\n真实拖动与撤销" as motion #D8F3DC
+rectangle "当前\n安装／覆盖升级／卸载\n桌面图标与入口" as installer #FFF1C1
+rectangle "待交付\n公开 GitHub Release\n安装包与源码" as release #E9EDF4
+rectangle "待继续\nMac 功能细节\n大图、DPI 与实机时序" as parity #E9EDF4
+ui --> qa
+qa --> motion
+motion --> installer
+installer --> release
+release --> parity
+legend bottom
+绿色：已验证　黄色：当前阶段　灰色：待完成
+不以自动检查代替 Mac 实机一致性验收。
+endlegend
+@enduml

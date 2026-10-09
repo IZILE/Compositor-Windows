@@ -1,0 +1,725 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.VisualTree;
+using Compositor.Core.Document;
+using SkiaSharp;
+
+namespace Compositor.Desktop;
+
+/// <summary>
+/// The Camera Raw Filter's panel: every group of settings as sliders, and Apply to write them into the layer's
+/// pixels. It is not a window of its own — the editor window docks it at its right edge, because the canvas has
+/// to stay live while it is up: the amounts are previewed on the canvas as they move, and the Mac build draws
+/// upright guides and picks colours on that same canvas, which a modal dialog would not allow.
+/// </summary>
+internal sealed partial class CameraRawPanel
+{
+    private readonly List<(Slider Slider, Action<CameraRawSettings, double> Set, TextBox Readout, string Format)> _rows = [];
+    /// <summary>The panel's amounts by the label their row carries, which is how the self check moves one.</summary>
+    private readonly Dictionary<string, Slider> _labelled = [];
+    private readonly List<double> _fallbacks = [];
+    private readonly ComboBox _glowStyle = new();
+    private readonly ComboBox _vignetteStyle = new();
+    private readonly ComboBox _geometryProjection = new();
+    private readonly ComboBox _curveChannel = new();
+    private readonly ListBox _points = new() { Height = 96 };
+    private readonly List<CameraRawPointColor> _pointList = [];
+    private CameraRawPointColor? _point;
+    private bool _showingPoints;
+    private CurveEditor? _curve;
+
+    /// <summary>
+    /// Asks for the picture to be shown with the amounts as they stand, which is called on every change. The
+    /// panel does not wait for it: a slider being dragged should not stop moving while a filter runs.
+    /// </summary>
+    public Action<CameraRawSettings, bool, bool, bool>? Preview { get; set; }
+
+    /// <summary>The amounts to write into the layer, once Apply is pressed.</summary>
+    public event Action<CameraRawSettings>? Applied;
+
+    /// <summary>Nothing is to be written; the caller puts the picture back as it was.</summary>
+    public event Action? Cancelled;
+
+    /// <summary>What is shown over the picture while the amounts are moved: clipped shadows in blue, clipped
+    /// highlights in red, and the sharpening mask. None of it is ever applied on Apply.</summary>
+    private readonly CheckBox _shadowClip = new() { [!ContentControl.ContentProperty] = UiText.Bind("Clipped shadows") };
+    private readonly CheckBox _highlightClip = new() { [!ContentControl.ContentProperty] = UiText.Bind("Clipped highlights") };
+    private readonly CheckBox _sharpenMaskView = new() { [!ContentControl.ContentProperty] = UiText.Bind("Sharpening mask") };
+    private readonly CheckBox _preview = new() { [!ContentControl.ContentProperty] = UiText.Bind("Preview"), IsChecked = true };
+    internal bool PreviewEnabled => _preview.IsChecked == true;
+    internal CheckBox PreviewControl => _preview;
+    internal ScrollViewer Parameters { get; } = new()
+    {
+        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+    };
+
+    /// <summary>The scope above the groups, and the readout of the pixel the pointer is over.</summary>
+    private readonly ScopesView _scopes = new() { Height = 110 };
+    private readonly TextBlock _readout = new()
+    {
+        Text = EmptyReadout,
+        FontSize = 11,
+        Foreground = Skin.SecondaryBrush,
+    };
+    private const string EmptyReadout = "R —   G —   B —";
+
+    /// <summary>Whether the drawn lines are read, the lines themselves, and whether more are being drawn.</summary>
+    private CameraRawUprightMode _upright;
+    private readonly List<CameraRawGeometryGuide> _guides = [];
+    private bool _drawing;
+    private readonly ComboBox _uprightChoice = new() { Width = 160 };
+    private readonly Button _drawGuides = new() { [!ContentControl.ContentProperty] = UiText.Bind("Draw Guides") };
+    private readonly TextBlock _guideNote = new()
+    {
+        TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+        FontSize = 11,
+        Opacity = 0.75,
+    };
+
+    /// <summary>
+    /// What the canvas is to show has changed — a line was drawn or cleared, or the panel has started or
+    /// stopped asking for one — so the window arms it or lets it go and hands it the lines it has.
+    /// </summary>
+    public event Action? CanvasChanged;
+
+    /// <summary>The lines drawn on the picture, in the layer's own fractions, as the panel has them.</summary>
+    public IReadOnlyList<CameraRawGeometryGuide> Guides => _guides;
+
+    /// <summary>Whether the panel is asking for a line to be drawn on the picture right now.</summary>
+    public bool DrawingGuides => _drawing;
+
+    /// <summary>
+    /// Adds a line drawn on the picture, given in the layer's own fractions. The first line levels itself and a
+    /// steep second one asks for a keystone, so a line is enough to change the picture: the preview is asked
+    /// for again, and the panel's Upright choice follows to Guided.
+    /// </summary>
+    public void AddGuide(CameraRawGeometryGuide guide)
+    {
+        if (!guide.IsUsable) return;
+        _guides.Add(guide);
+        _upright = CameraRawUprightMode.Guided;
+        _uprightChoice.SelectedIndex = (int)_upright;
+        RefreshGuides();
+        CanvasChanged?.Invoke();
+        RefreshPreview();
+    }
+
+    /// <summary>The lines put away, which leaves the slider amounts alone.</summary>
+    public void ClearGuides()
+    {
+        _guides.Clear();
+        RefreshGuides();
+        CanvasChanged?.Invoke();
+        RefreshPreview();
+    }
+
+    /// <summary>Stops asking for lines to be drawn, which is what Apply and Cancel do too.</summary>
+    public void StopDrawingGuides() => SetDrawing(false);
+
+    private void SetDrawing(bool drawing)
+    {
+        if (_drawing == drawing) return;
+        _drawing = drawing;
+        _drawGuides.Content = drawing ? "Stop drawing" : "Draw Guides";
+        RefreshGuides();
+        CanvasChanged?.Invoke();
+    }
+
+    /// <summary>The row's own words: how many lines there are and what to do with the next one.</summary>
+    private void RefreshGuides()
+    {
+        _guideNote.Text = _guides.Count == 0
+            ? "Drag on the picture to draw a line that should be level or upright. One line turns the "
+                + "picture; a second, steeper one adds a keystone."
+            : $"{_guides.Count} line{(_guides.Count == 1 ? "" : "s")} drawn"
+                + (_drawing ? " — drag again to add another." : " — Draw Guides adds another.");
+    }
+
+    /// <summary>The body, for the window to dock at its right edge.</summary>
+    public Control View { get; }
+
+    /// <summary>How many amounts the panel is made of. A bitmap does not lay a scroll view's content out, so
+    /// the drawing cannot show the rows; the self check counts them here instead.</summary>
+    internal int AmountCount => _rows.Count;
+
+    /// <summary>Shows what is being asked for now, overlays and all.</summary>
+    private void RefreshPreview() => Preview?.Invoke(Current(), _shadowClip.IsChecked == true,
+        _highlightClip.IsChecked == true, _sharpenMaskView.IsChecked == true);
+
+    /// <summary>Asks for a picture of the amounts as they stand, without any of them having moved.</summary>
+    public void Show() => RefreshPreview();
+
+    /// <summary>Shows the scope the last preview counted, which is the picture the canvas is drawing.</summary>
+    public void ShowScope(CameraRawScope? scope) => _scopes.Scope = scope;
+
+    /// <summary>
+    /// Shows the colour of the pixel the pointer is over, as the readout under the scope. Nothing is passed
+    /// when the pointer is off the picture, and the readout goes back to its dashes.
+    /// </summary>
+    public void ShowReadout((int Red, int Green, int Blue)? pixel) => _readout.Text = pixel is { } value
+        ? $"R {value.Red}   G {value.Green}   B {value.Blue}"
+        : EmptyReadout;
+
+    /// <summary>
+    /// Which of the two clipping views is on, so the caller knows what the triangles and the checkboxes agree
+    /// on. They are one switch each, whichever of the two is used to move them.
+    /// </summary>
+    public (bool Shadows, bool Highlights) Clipping =>
+        (_shadowClip.IsChecked == true, _highlightClip.IsChecked == true);
+
+    /// <summary>The two triangles lit as their checkboxes have them, which is what a tick of one changes.</summary>
+    private void RefreshClipping()
+    {
+        _scopes.ShowsShadows = _shadowClip.IsChecked == true;
+        _scopes.ShowsHighlights = _highlightClip.IsChecked == true;
+    }
+
+    /// <summary>Presses one of the scope's clipping triangles, and the switch it stands for goes with it.</summary>
+    internal void PressClippingTriangle(bool shadows) => _scopes.Press(shadows);
+
+    /// <summary>Asks for the other of the histogram and the vectorscope, as a right-click on the scope does.</summary>
+    internal void SwapScope() => _scopes.Swap();
+
+    /// <summary>
+    /// One of the panel's amounts, for the checks: a slider is the one control a pointer can be aimed at, and the
+    /// panel's amounts are inside a scroll view — the place this port's notes warn that a control can be drawn and
+    /// still not reachable, so a click on one is the only thing that proves it.
+    /// </summary>
+    internal Slider? Amount(string label) => _labelled.TryGetValue(label, out var slider) ? slider : null;
+
+    /// <summary>Presses the Draw Guides button, which asks the canvas to take lines or lets it go.</summary>
+    internal void PressDrawGuides() => SetDrawing(!_drawing);
+
+    /// <summary>Whether the density is being drawn rather than the three ribbons.</summary>
+    internal bool ShowingVectorscope => _scopes.Vectorscope;
+
+    /// <summary>Writes the amounts as they stand into the layer. The buttons go through here, and so does the
+    /// self check, so what it drives is the path a press takes.</summary>
+    public void Apply()
+    {
+        SetDrawing(false);
+        Applied?.Invoke(Current());
+    }
+
+    /// <summary>Asks for nothing to be written. The buttons go through here, and so does the self check.</summary>
+    public void Cancel()
+    {
+        SetDrawing(false);
+        Cancelled?.Invoke();
+    }
+
+    /// <summary>Restores canonical defaults and clears points, curves, clipping and upright guides.</summary>
+    public void Reset()
+    {
+        for (var index = 0; index < _rows.Count; index++) _rows[index].Slider.Value = _fallbacks[index];
+        _glowStyle.SelectedIndex = _vignetteStyle.SelectedIndex = _geometryProjection.SelectedIndex = 0;
+        _uprightChoice.SelectedIndex = 0;
+        _pointList.Clear(); _point = null; Labelled();
+        _shadowClip.IsChecked = _highlightClip.IsChecked = _sharpenMaskView.IsChecked = false;
+        RefreshClipping();
+        SetDrawing(false);
+        if (_curve is not null) _curve.Curves = new Compositor.Core.Format.CurvesSettings();
+        ClearGuides();
+    }
+
+    /// <summary>
+    /// Moves one of the panel's own amounts, by the label its row carries. A slider's value is a property and
+    /// not a template, so the panel can be driven without a pointer: the change runs the same handler a drag
+    /// would, preview and all. The self check is the only caller.
+    /// </summary>
+    internal void Move(string label, double value)
+    {
+        if (!_labelled.TryGetValue(label, out var slider))
+        {
+            throw new InvalidOperationException($"the panel has no amount called {label}");
+        }
+        slider.Value = value;
+    }
+
+    /// <summary>What one of the panel's amounts is set to, which the self check reads to see where the panel
+    /// opened: the same slider <see cref="Amount"/> hands back. The self check is the only caller.</summary>
+    internal double SetTo(string label) => Amount(label) is { } slider
+        ? slider.Value
+        : throw new InvalidOperationException($"the panel has no amount called {label}");
+
+    /// <summary>The amounts as the panel has them, for a preview of what they would do.</summary>
+    public CameraRawSettings Current()
+    {
+        var settings = new CameraRawSettings
+        {
+            GlowStyle = Math.Max(0, _glowStyle.SelectedIndex),
+            VignetteStyle = Math.Max(0, _vignetteStyle.SelectedIndex),
+            Geometry = new CameraRawGeometrySettings
+            {
+                Projection = (GeometryProjection)Math.Max(0, _geometryProjection.SelectedIndex),
+                Upright = _upright,
+            },
+            Curve = _curve is { } curve ? curve.Curves : new Compositor.Core.Format.CurvesSettings(),
+            // The mixer's places are written into by the rows, so the settings the rows are handed have all
+            // twenty-four of them whatever the layer's panel started from.
+            Mixer = new double[24],
+            Points = [.. Points()],
+        };
+        foreach (var (slider, set, _, _) in _rows) set(settings, slider.Value);
+        settings.Geometry.Guides.AddRange(_guides);
+        return settings;
+    }
+
+    internal CameraRawPanel(CameraRawSettings start, SKColor brush)
+    {
+        brush.ToHsl(out var brushHue, out var brushSaturation, out _);
+        _brushHue = brushHue;
+        _brushSaturation = brushSaturation;
+        var defaults = new CameraRawSettings();
+        var groups = new StackPanel { Margin = new Thickness(24, 0, 24, 24), Spacing = 4 };
+
+        // The overlays come first: they are shown over whatever the groups below are doing, and none of them
+        // is written into the layer when Apply is pressed. The clipping triangles in the scope are the same two
+        // switches, so one setter drives both and neither can be lit while the other is not.
+        foreach (var box in new[] { _shadowClip, _highlightClip, _sharpenMaskView })
+        {
+            box.IsCheckedChanged += (_, _) => { RefreshClipping(); RefreshPreview(); };
+        }
+        _scopes.ClippingToggled += shadows =>
+        {
+            var box = shadows ? _shadowClip : _highlightClip;
+            box.IsChecked = box.IsChecked != true;
+        };
+        _scopes.ModeSwapped += () => _scopes.Vectorscope = !_scopes.Vectorscope;
+        _preview.IsCheckedChanged += (_, _) => RefreshPreview();
+
+        groups.Children.Add(Heading("Light"));
+        Add(groups, "Exposure, stops", -5, 5, start.Exposure, (s, v) => s.Exposure = v, "0.00", fallback: defaults.Exposure);
+        Add(groups, "Contrast", -100, 100, start.Contrast, (s, v) => s.Contrast = v, fallback: defaults.Contrast);
+        Add(groups, "Highlights", -100, 100, start.Highlights, (s, v) => s.Highlights = v, fallback: defaults.Highlights);
+        Add(groups, "Shadows", -100, 100, start.Shadows, (s, v) => s.Shadows = v, fallback: defaults.Shadows);
+        Add(groups, "Whites", -100, 100, start.Whites, (s, v) => s.Whites = v, fallback: defaults.Whites);
+        Add(groups, "Blacks", -100, 100, start.Blacks, (s, v) => s.Blacks = v, fallback: defaults.Blacks);
+
+        groups.Children.Add(Heading("Color"));
+        Add(groups, "Temperature, cool to warm", -100, 100, start.Temperature, (s, v) => s.Temperature = v, fallback: defaults.Temperature);
+        Add(groups, "Tint, green to magenta", -100, 100, start.Tint, (s, v) => s.Tint = v, fallback: defaults.Tint);
+        Add(groups, "Vibrance", -100, 100, start.Vibrance, (s, v) => s.Vibrance = v, fallback: defaults.Vibrance);
+        Add(groups, "Saturation", -100, 100, start.Saturation, (s, v) => s.Saturation = v, fallback: defaults.Saturation);
+
+        groups.Children.Add(Heading("Effects"));
+        Add(groups, "Texture", -100, 100, start.Texture, (s, v) => s.Texture = v, fallback: defaults.Texture);
+        Add(groups, "Clarity", -100, 100, start.Clarity, (s, v) => s.Clarity = v, fallback: defaults.Clarity);
+        Add(groups, "Dehaze", -100, 100, start.Dehaze, (s, v) => s.Dehaze = v, fallback: defaults.Dehaze);
+        Add(groups, "Glow", 0, 100, start.Glow, (s, v) => s.Glow = v, fallback: defaults.Glow);
+        groups.Children.Add(Choice("Glow style", _glowStyle, ["Diffusion", "Bloom", "Halation"]));
+        Add(groups, "Glow range", 0, 100, start.GlowRange, (s, v) => s.GlowRange = v, fallback: defaults.GlowRange);
+        Add(groups, "Glow spread", 0, 100, start.GlowSpread, (s, v) => s.GlowSpread = v, fallback: defaults.GlowSpread);
+        Add(groups, "Glow warmth", -100, 100, start.GlowWarmth, (s, v) => s.GlowWarmth = v, fallback: defaults.GlowWarmth);
+        Add(groups, "Vignette amount", -100, 100, start.VignetteAmount, (s, v) => s.VignetteAmount = v, fallback: defaults.VignetteAmount);
+        groups.Children.Add(Choice("Vignette style", _vignetteStyle,
+            ["Highlight priority", "Color priority", "Paint overlay"]));
+        Add(groups, "Vignette midpoint", 0, 100, start.VignetteMidpoint, (s, v) => s.VignetteMidpoint = v, fallback: defaults.VignetteMidpoint);
+        Add(groups, "Vignette roundness", -100, 100, start.VignetteRoundness, (s, v) => s.VignetteRoundness = v, fallback: defaults.VignetteRoundness);
+        Add(groups, "Vignette feather", 0, 100, start.VignetteFeather, (s, v) => s.VignetteFeather = v, fallback: defaults.VignetteFeather);
+        Add(groups, "Vignette highlights", -100, 100, start.VignetteHighlights, (s, v) => s.VignetteHighlights = v, fallback: defaults.VignetteHighlights);
+        Add(groups, "Grain amount", 0, 100, start.GrainAmount, (s, v) => s.GrainAmount = v, fallback: defaults.GrainAmount);
+        Add(groups, "Grain size", 0, 100, start.GrainSize, (s, v) => s.GrainSize = v, fallback: defaults.GrainSize);
+        Add(groups, "Grain roughness", 0, 100, start.GrainRoughness, (s, v) => s.GrainRoughness = v, fallback: defaults.GrainRoughness);
+
+        groups.Children.Add(Heading("Detail"));
+        Add(groups, "Sharpen amount", 0, 150, start.SharpenAmount, (s, v) => s.SharpenAmount = v, fallback: defaults.SharpenAmount);
+        Add(groups, "Sharpen radius", 0.5, 100, start.SharpenRadius, (s, v) => s.SharpenRadius = v, "0.0", fallback: defaults.SharpenRadius);
+        Add(groups, "Sharpen detail", 0, 100, start.SharpenDetail, (s, v) => s.SharpenDetail = v, fallback: defaults.SharpenDetail);
+        Add(groups, "Sharpen masking", 0, 100, start.SharpenMasking, (s, v) => s.SharpenMasking = v, fallback: defaults.SharpenMasking);
+        groups.Children.Add(_sharpenMaskView);
+        Add(groups, "Noise luminance", 0, 100, start.NoiseLuminance, (s, v) => s.NoiseLuminance = v, fallback: defaults.NoiseLuminance);
+        Add(groups, "Noise luminance detail", 0, 100, start.NoiseLuminanceDetail, (s, v) => s.NoiseLuminanceDetail = v, fallback: defaults.NoiseLuminanceDetail);
+        Add(groups, "Noise luminance contrast", 0, 100, start.NoiseLuminanceContrast, (s, v) => s.NoiseLuminanceContrast = v, fallback: defaults.NoiseLuminanceContrast);
+        Add(groups, "Noise color", 0, 100, start.NoiseColor, (s, v) => s.NoiseColor = v, fallback: defaults.NoiseColor);
+        Add(groups, "Noise color detail", 0, 100, start.NoiseColorDetail, (s, v) => s.NoiseColorDetail = v, fallback: defaults.NoiseColorDetail);
+        Add(groups, "Noise color smoothness", 0, 100, start.NoiseColorSmoothness, (s, v) => s.NoiseColorSmoothness = v, fallback: defaults.NoiseColorSmoothness);
+
+        groups.Children.Add(Heading("Optics"));
+        Add(groups, "Remove chromatic aberration", 0, 1, start.RemoveChromaticAberration ? 1 : 0, (s, v) => s.RemoveChromaticAberration = v > 0.5, "0", fallback: defaults.RemoveChromaticAberration ? 1 : 0);
+        Add(groups, "Lens profile", 0, 1, start.EnableLensProfile ? 1 : 0, (s, v) => s.EnableLensProfile = v > 0.5, "0", fallback: defaults.EnableLensProfile ? 1 : 0);
+        Add(groups, "Profile distortion", 0, 100, start.ProfileDistortion, (s, v) => s.ProfileDistortion = v, fallback: defaults.ProfileDistortion);
+        Add(groups, "Profile vignetting", 0, 100, start.ProfileVignetting, (s, v) => s.ProfileVignetting = v, fallback: defaults.ProfileVignetting);
+        Add(groups, "Distortion", -100, 100, start.Distortion, (s, v) => s.Distortion = v, fallback: defaults.Distortion);
+        Add(groups, "Purple amount", 0, 100, start.PurpleAmount, (s, v) => s.PurpleAmount = v, fallback: defaults.PurpleAmount);
+        Add(groups, "Purple hue low", 0, 360, start.PurpleHueLow, (s, v) => s.PurpleHueLow = v, fallback: defaults.PurpleHueLow);
+        Add(groups, "Purple hue high", 0, 360, start.PurpleHueHigh, (s, v) => s.PurpleHueHigh = v, fallback: defaults.PurpleHueHigh);
+        Add(groups, "Green amount", 0, 100, start.GreenAmount, (s, v) => s.GreenAmount = v, fallback: defaults.GreenAmount);
+        Add(groups, "Green hue low", 0, 360, start.GreenHueLow, (s, v) => s.GreenHueLow = v, fallback: defaults.GreenHueLow);
+        Add(groups, "Green hue high", 0, 360, start.GreenHueHigh, (s, v) => s.GreenHueHigh = v, fallback: defaults.GreenHueHigh);
+        Add(groups, "Lens vignette", -100, 100, start.OpticsVignetteAmount, (s, v) => s.OpticsVignetteAmount = v, fallback: defaults.OpticsVignetteAmount);
+        Add(groups, "Lens vignette midpoint", 0, 100, start.OpticsVignetteMidpoint, (s, v) => s.OpticsVignetteMidpoint = v, fallback: defaults.OpticsVignetteMidpoint);
+
+        groups.Children.Add(Heading("Geometry"));
+        // Guided upright is the Mac's own: a line drawn on the picture that should be level or upright. It sits
+        // with the amounts it is added to, because that is what it is — the lines ask for a turn and, when one
+        // of them is steep, a keystone, and the sliders add to that.
+        _upright = start.Geometry.Upright;
+        _uprightChoice.ItemsSource = new[] { "Off", "Guided" };
+        _uprightChoice.SelectedIndex = (int)_upright;
+        _uprightChoice.SelectionChanged += (_, _) =>
+        {
+            _upright = (CameraRawUprightMode)Math.Max(0, _uprightChoice.SelectedIndex);
+            RefreshPreview();
+        };
+        _drawGuides.Click += (_, _) => SetDrawing(!_drawing);
+        var clear = new Button { [!ContentControl.ContentProperty] = UiText.Bind("Clear guides") };
+        clear.Click += (_, _) => ClearGuides();
+        groups.Children.Add(MacControls.Row("Upright", _uprightChoice, 96));
+        groups.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Children = { _drawGuides, clear },
+        });
+        groups.Children.Add(_guideNote);
+        RefreshGuides();
+        groups.Children.Add(Choice("Projection", _geometryProjection, ["Perspective", "Rectilinear"]));
+        Add(groups, "Vertical", -100, 100, start.Geometry.Vertical, (s, v) => s.Geometry.Vertical = v, fallback: defaults.Geometry.Vertical);
+        Add(groups, "Horizontal", -100, 100, start.Geometry.Horizontal, (s, v) => s.Geometry.Horizontal = v, fallback: defaults.Geometry.Horizontal);
+        Add(groups, "Rotate", -45, 45, start.Geometry.Rotate, (s, v) => s.Geometry.Rotate = v, fallback: defaults.Geometry.Rotate);
+        Add(groups, "Aspect", -100, 100, start.Geometry.Aspect, (s, v) => s.Geometry.Aspect = v, fallback: defaults.Geometry.Aspect);
+        Add(groups, "Scale", -100, 100, start.Geometry.Scale, (s, v) => s.Geometry.Scale = v, fallback: defaults.Geometry.Scale);
+        Add(groups, "Offset X", -100, 100, start.Geometry.OffsetX, (s, v) => s.Geometry.OffsetX = v, fallback: defaults.Geometry.OffsetX);
+        Add(groups, "Offset Y", -100, 100, start.Geometry.OffsetY, (s, v) => s.Geometry.OffsetY = v, fallback: defaults.Geometry.OffsetY);
+        Add(groups, "Constrain crop", 0, 1, start.Geometry.ConstrainCrop ? 1 : 0,
+            (s, v) => s.Geometry.ConstrainCrop = v > 0.5, "0");
+
+        groups.Children.Add(Heading("Calibration"));
+        Add(groups, "Process version", 1, 6, start.ProcessVersion, (s, v) => s.ProcessVersion = (int)Math.Round(v), "0", fallback: defaults.ProcessVersion);
+        Add(groups, "Shadow tint", -100, 100, start.ShadowTint, (s, v) => s.ShadowTint = v, fallback: defaults.ShadowTint);
+        Add(groups, "Red hue", -100, 100, start.RedHue, (s, v) => s.RedHue = v, fallback: defaults.RedHue);
+        Add(groups, "Red saturation", -100, 100, start.RedSaturation, (s, v) => s.RedSaturation = v, fallback: defaults.RedSaturation);
+        Add(groups, "Green hue", -100, 100, start.GreenHue, (s, v) => s.GreenHue = v, fallback: defaults.GreenHue);
+        Add(groups, "Green saturation", -100, 100, start.GreenSaturation, (s, v) => s.GreenSaturation = v, fallback: defaults.GreenSaturation);
+        Add(groups, "Blue hue", -100, 100, start.BlueHue, (s, v) => s.BlueHue = v, fallback: defaults.BlueHue);
+        Add(groups, "Blue saturation", -100, 100, start.BlueSaturation, (s, v) => s.BlueSaturation = v, fallback: defaults.BlueSaturation);
+
+        groups.Children.Add(Heading("Curve"));
+        _curveChannel.ItemsSource = new[] { "Whole picture", "Red", "Green", "Blue" };
+        _curveChannel.SelectedIndex = Math.Clamp((int)start.Curve.Channel, 0, 3);
+        _curveChannel.Width = 160;
+        _curve = new CurveEditor { Curves = Clone(start.Curve), Height = 220 };
+        _curveChannel.SelectionChanged += (_, _) => _curve.Channel = Math.Max(0, _curveChannel.SelectedIndex);
+        _curve.Changed += RefreshPreview;
+        groups.Children.Add(_curveChannel);
+        groups.Children.Add(_curve);
+        Add(groups, "Refine saturation", -100, 100, start.RefineSaturation, (s, v) => s.RefineSaturation = v, fallback: defaults.RefineSaturation);
+
+        groups.Children.Add(Heading("Color mixer"));
+        // The hues come first in the mixer's own places and then the saturations, which is the order the
+        // kernel reads them in rather than the order a panel would list them.
+        var mixer = start.Mixer;
+        for (var family = 0; family < CameraRawSettings.MixerFamilies.Length; family++)
+        {
+            var hue = family;
+            var saturation = CameraRawSettings.MixerFamilies.Length + family;
+            var luminance = CameraRawSettings.MixerFamilies.Length * 2 + family;
+            var name = CameraRawSettings.MixerFamilies[family];
+            Add(groups, $"{name}: hue", -100, 100, At(mixer, hue), (s, v) => s.Mixer[hue] = v);
+            Add(groups, $"{name}: saturation", -100, 100, At(mixer, saturation), (s, v) => s.Mixer[saturation] = v);
+            Add(groups, $"{name}: luminance", -100, 100, At(mixer, luminance), (s, v) => s.Mixer[luminance] = v);
+        }
+
+        groups.Children.Add(Heading("Point color"));
+        groups.Children.Add(new TextBlock
+        {
+            Text = "Pick the color the brush is set to out of the picture, then move it. The Mac build picks "
+                + "colors by clicking on the canvas, which this panel does not do.",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            Opacity = 0.75,
+        });
+        var addPoint = new Button { [!ContentControl.ContentProperty] = UiText.Bind("Add the brush color") };
+        var removePoint = new Button { [!ContentControl.ContentProperty] = UiText.Bind("Remove") };
+        addPoint.Click += (_, _) => AddPoint();
+        removePoint.Click += (_, _) => RemovePoint();
+        groups.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Children = { addPoint, removePoint },
+        });
+        groups.Children.Add(_points);
+        _points.SelectionChanged += (_, _) => SelectPoint();
+        // The nine numbers of the one being edited, which is what the panel's sliders move.
+        _pointRow = _rows.Count;
+        Add(groups, "Hue", 0, 360, 0, (_, v) => Point(point => point.Hue = v), "0");
+        Add(groups, "Saturation", 0, 1, 0, (_, v) => Point(point => point.Saturation = v), "0.00");
+        Add(groups, "Lightness", 0, 1, 0, (_, v) => Point(point => point.Luminance = v), "0.00");
+        Add(groups, "Turn the hue", -100, 100, 0, (_, v) => Point(point => point.HueShift = v));
+        Add(groups, "Raise the saturation", -100, 100, 0, (_, v) => Point(point => point.SaturationShift = v));
+        Add(groups, "Move the lightness", -100, 100, 0, (_, v) => Point(point => point.LuminanceShift = v));
+        Add(groups, "Hue range", 5, 180, 30, (_, v) => Point(point => point.HueRange = v), "0");
+        Add(groups, "Saturation range", 0.05, 1, 0.4, (_, v) => Point(point => point.SaturationRange = v), "0.00");
+        Add(groups, "Lightness range", 0.05, 1, 0.4, (_, v) => Point(point => point.LuminanceRange = v), "0.00");
+        foreach (var point in start.Points) _pointList.Add(point.Normalized());
+        if (_pointList.Count > 0) _points.SelectedIndex = 0;
+
+        groups.Children.Add(Heading("Color grading"));
+        Add(groups, "Shadows: hue", 0, 360, start.ShadowHue, (s, v) => s.ShadowHue = v, "0", fallback: defaults.ShadowHue);
+        Add(groups, "Shadows: amount", 0, 100, start.ShadowSaturation, (s, v) => s.ShadowSaturation = v, "0", fallback: defaults.ShadowSaturation);
+        Add(groups, "Shadows: lightness", -100, 100, start.ShadowLuminance, (s, v) => s.ShadowLuminance = v, fallback: defaults.ShadowLuminance);
+        Add(groups, "Midtones: hue", 0, 360, start.MidtoneHue, (s, v) => s.MidtoneHue = v, "0", fallback: defaults.MidtoneHue);
+        Add(groups, "Midtones: amount", 0, 100, start.MidtoneSaturation, (s, v) => s.MidtoneSaturation = v, "0", fallback: defaults.MidtoneSaturation);
+        Add(groups, "Midtones: lightness", -100, 100, start.MidtoneLuminance, (s, v) => s.MidtoneLuminance = v, fallback: defaults.MidtoneLuminance);
+        Add(groups, "Highlights: hue", 0, 360, start.HighlightHue, (s, v) => s.HighlightHue = v, "0", fallback: defaults.HighlightHue);
+        Add(groups, "Highlights: amount", 0, 100, start.HighlightSaturation, (s, v) => s.HighlightSaturation = v, "0", fallback: defaults.HighlightSaturation);
+        Add(groups, "Highlights: lightness", -100, 100, start.HighlightLuminance, (s, v) => s.HighlightLuminance = v, fallback: defaults.HighlightLuminance);
+        Add(groups, "Whole picture: hue", 0, 360, start.GlobalHue, (s, v) => s.GlobalHue = v, "0", fallback: defaults.GlobalHue);
+        Add(groups, "Whole picture: amount", 0, 100, start.GlobalSaturation, (s, v) => s.GlobalSaturation = v, "0", fallback: defaults.GlobalSaturation);
+        Add(groups, "Whole picture: lightness", -100, 100, start.GlobalLuminance, (s, v) => s.GlobalLuminance = v, fallback: defaults.GlobalLuminance);
+        Add(groups, "Grading blending", 0, 100, start.GradeBlending, (s, v) => s.GradeBlending = v, "0", fallback: defaults.GradeBlending);
+        Add(groups, "Grading balance", -100, 100, start.GradeBalance, (s, v) => s.GradeBalance = v, fallback: defaults.GradeBalance);
+
+        _glowStyle.SelectedIndex = start.GlowStyle;
+        _vignetteStyle.SelectedIndex = start.VignetteStyle;
+
+        var ok = new Button { [!ContentControl.ContentProperty] = UiText.Bind("OK") };
+        var cancel = new Button { [!ContentControl.ContentProperty] = UiText.Bind("Cancel") };
+        ok.Click += (_, _) => Apply();
+        cancel.Click += (_, _) => Cancel();
+
+        var title = new TextBlock
+        {
+            [!TextBlock.TextProperty] = UiText.Bind("Camera Raw Filter"),
+            Margin = new Thickness(24, 24, 24, 8),
+            Foreground = Skin.LabelBrush,
+            FontWeight = FontWeight.SemiBold,
+        };
+        var reset = new MenuItem { [!MenuItem.HeaderProperty] = UiText.Bind("Reset") };
+        reset.Click += (_, _) => Reset();
+        title.ContextMenu = new ContextMenu { ItemsSource = new[] { reset } };
+        // The scope sits above the groups and outside their scroll, so it stays in view while they are worked
+        // through — the Mac's panel puts its histogram in the same place.
+        var scope = new StackPanel
+        {
+            Margin = new Thickness(24, 0, 24, 10),
+            Spacing = 4,
+            Children = { _scopes, _readout },
+        };
+        var buttonRow = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
+        buttonRow.Children.Add(cancel);
+        Grid.SetColumn(ok, 2);
+        buttonRow.Children.Add(ok);
+        var buttons = new StackPanel { Margin = new Thickness(24, 10, 24, 24), Spacing = 8,
+            Children = { _preview, new Border { Height = 1, Background = new SolidColorBrush(Colors.White, 0.08) }, buttonRow } };
+        var dock = new DockPanel();
+        DockPanel.SetDock(title, Dock.Top);
+        DockPanel.SetDock(scope, Dock.Top);
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        dock.Children.Add(title);
+        dock.Children.Add(scope);
+        dock.Children.Add(buttons);
+        // The groups fill what is left, and scroll: the panel is the height of the window and they are not.
+        BuildSections(groups);
+        Parameters.Content = groups;
+        dock.Children.Add(Parameters);
+        View = dock;
+    }
+
+    /// <summary>The colours as the panel has them, with the one being edited stored back first.</summary>
+    private List<CameraRawPointColor> Points()
+    {
+        StorePoint();
+        return [.. _pointList];
+    }
+
+    /// <summary>Changes the colour being edited, if there is one.</summary>
+    private void Point(Action<CameraRawPointColor> change)
+    {
+        if (_point is null) return;
+        change(_point);
+        Labelled();
+    }
+
+    /// <summary>Adds the brush's own colour to the points, at the middle of the picture's lightness.</summary>
+    private void AddPoint()
+    {
+        if (_pointList.Count >= CameraRawSettings.MostPoints) return;
+        StorePoint();
+        _pointList.Add(new CameraRawPointColor
+        {
+            Hue = _brushHue,
+            Saturation = _brushSaturation,
+            Luminance = 0.5,
+        });
+        _showingPoints = true;
+        try
+        {
+            _points.SelectedIndex = _pointList.Count - 1;
+        }
+        finally
+        {
+            _showingPoints = false;
+        }
+        _point = _pointList[^1];
+        Labelled();
+        RefreshPreview();
+    }
+
+    /// <summary>Takes the colour being edited out of the list.</summary>
+    private void RemovePoint()
+    {
+        if (_points.SelectedIndex < 0 || _points.SelectedIndex >= _pointList.Count) return;
+        _pointList.RemoveAt(_points.SelectedIndex);
+        _showingPoints = true;
+        try
+        {
+            _points.SelectedIndex = _pointList.Count > 0 ? Math.Min(_points.SelectedIndex, _pointList.Count - 1) : -1;
+        }
+        finally
+        {
+            _showingPoints = false;
+        }
+        _point = _points.SelectedIndex >= 0 ? _pointList[_points.SelectedIndex] : null;
+        Labelled();
+        RefreshPreview();
+    }
+
+    /// <summary>The list has moved to another colour: what was being edited is kept and the other loaded.</summary>
+    private void SelectPoint()
+    {
+        if (_showingPoints) return;
+        StorePoint();
+        _point = _points.SelectedIndex >= 0 && _points.SelectedIndex < _pointList.Count
+            ? _pointList[_points.SelectedIndex]
+            : null;
+        LoadPoint();
+        RefreshPreview();
+    }
+
+    private void StorePoint()
+    {
+        if (_point is null) return;
+        var at = _pointList.IndexOf(_point);
+        if (at >= 0) _pointList[at] = _point.Normalized();
+    }
+
+    /// <summary>
+    /// The sliders read the colour being edited. The rows are the panel's own, so they are moved without
+    /// asking for a preview of each one.
+    /// </summary>
+    private void LoadPoint()
+    {
+        if (_point is not { } point) return;
+        var values = new[]
+        {
+            point.Hue, point.Saturation, point.Luminance,
+            point.HueShift, point.SaturationShift, point.LuminanceShift,
+            point.HueRange, point.SaturationRange, point.LuminanceRange,
+        };
+        for (var index = 0; index < values.Length; index++)
+        {
+            _rows[_pointRow + index].Slider.Value = values[index];
+        }
+    }
+
+    /// <summary>Puts the numbers of each colour, and whether one is being edited at all, into the list.</summary>
+    private void Labelled()
+    {
+        _showingPoints = true;
+        try
+        {
+            var at = _points.SelectedIndex;
+            _points.ItemsSource = _pointList
+                .Select((point, index) => $"{index + 1}: hue {point.Hue:0}°, saturation {point.Saturation:0.00}, "
+                    + $"lightness {point.Luminance:0.00}")
+                .ToList();
+            _points.SelectedIndex = at;
+        }
+        finally
+        {
+            _showingPoints = false;
+        }
+    }
+
+    /// <summary>The first row that belongs to the colour being edited.</summary>
+    private int _pointRow;
+
+    /// <summary>One of the mixer's numbers, or nothing when the settings came without their twenty-four.</summary>
+    private static double At(double[] mixer, int index) => index < mixer.Length ? mixer[index] : 0;
+
+    private static Control Heading(string text) => new TextBlock
+    {
+        [!TextBlock.TextProperty] = UiText.Bind(text),
+        FontWeight = FontWeight.SemiBold,
+        Tag = text,
+        Margin = new Thickness(0, 10, 0, 2),
+    };
+
+    private void Add(StackPanel parent, string label, double least, double most, double value,
+        Action<CameraRawSettings, double> set, string format = "0.#", double fallback = 0)
+    {
+        var slider = new Slider { Minimum = least, Maximum = most, Value = value,
+            Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
+        SetTrack(slider, label);
+        slider.PointerPressed += (_, args) =>
+        {
+            if (args.ClickCount < 2 || args.Source is not Control source
+                || source is not Avalonia.Controls.Primitives.Thumb && !source.GetVisualAncestors().OfType<Avalonia.Controls.Primitives.Thumb>().Any()) return;
+            slider.Value = Math.Clamp(fallback, least, most);
+            args.Handled = true;
+        };
+        var readout = new TextBox { Classes = { "numeric" }, Width = 56, VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = Avalonia.Media.TextAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+        void UpdateReadout() { if (!readout.IsFocused) readout.Text = slider.Value.ToString(format); }
+        void Commit()
+        {
+            if (double.TryParse(readout.Text, out var amount) && double.IsFinite(amount))
+                slider.Value = Math.Clamp(amount, least, most);
+            readout.Text = slider.Value.ToString(format);
+        }
+        readout.LostFocus += (_, _) => Commit();
+        readout.KeyDown += (_, args) =>
+        {
+            if (args.Key != Avalonia.Input.Key.Enter) return;
+            Commit();
+            slider.Focus();
+            args.Handled = true;
+        };
+        slider.PropertyChanged += (_, change) =>
+        {
+            if (change.Property != Slider.ValueProperty) return;
+            UpdateReadout();
+            RefreshPreview();
+        };
+        UpdateReadout();
+        var amounts = new Grid { ColumnDefinitions = new ColumnDefinitions("*,56") };
+        amounts.Children.Add(slider);
+        Grid.SetColumn(readout, 1);
+        amounts.Children.Add(readout);
+        var displayLabel = label.Split(',')[0];
+        var row = MacControls.Row(displayLabel, amounts, 96);
+        UiText.Set(row, ToolTip.TipProperty, label);
+        parent.Children.Add(row);
+        _rows.Add((slider, set, readout, format));
+        _fallbacks.Add(Math.Clamp(fallback, least, most));
+        _labelled[label] = slider;
+    }
+
+    private static Control Choice(string label, ComboBox box, string[] options)
+    {
+        box.ItemsSource = options;
+        box.SelectedIndex = 0;
+        return MacControls.Row(label, box, 96);
+    }
+
+    /// <summary>The brush's colour while the panel was opened, which is the colour a point starts at.</summary>
+    private readonly double _brushHue;
+    private readonly double _brushSaturation;
+
+    /// <summary>
+    /// The curve copied, so dragging a handle does not reach the layer until Apply: the editor writes into the
+    /// copy it is given, and a history snapshot holds the record it started from.
+    /// </summary>
+    private static Compositor.Core.Format.CurvesSettings Clone(Compositor.Core.Format.CurvesSettings curves) => new()
+    {
+        Channel = curves.Channel,
+        Channels = curves.Channels
+            .Select(points => points.Select(point => new Compositor.Core.Format.CurvePoint { X = point.X, Y = point.Y }).ToList())
+            .ToList(),
+    };
+}

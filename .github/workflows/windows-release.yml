@@ -1,0 +1,48 @@
+name: Windows release
+
+on:
+  push:
+    branches: [main]
+    paths: ['windows/**', '.github/workflows/windows-release.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: '10.0.401'
+      - name: Install verified Inno Setup compiler
+        shell: pwsh
+        run: |
+          $setup = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_0/innosetup-7.1.0-x64.exe' -OutFile $setup
+          $expected = '0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f'
+          if ((Get-FileHash $setup -Algorithm SHA256).Hash -ne $expected) { throw 'Compiler hash mismatch' }
+          $signature = Get-AuthenticodeSignature $setup
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notlike '*Pyrsys*') { throw 'Compiler signature mismatch' }
+          $compiler = Join-Path $env:RUNNER_TEMP 'inno7'
+          $process = Start-Process $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',('/DIR="'+$compiler+'"'),'/NOICONS','/TASKS=') -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Compiler installation failed' }
+          "INNO_COMPILER=$compiler/ISCC.exe" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Build, test and package
+        shell: pwsh
+        run: ./windows/tools/BuildInstaller.ps1 -Compiler $env:INNO_COMPILER -OutputDirectory ./dist
+      - name: Check the published executable
+        shell: pwsh
+        run: ./windows/tools/VerifyPublished.ps1 -Executable ./dist/published/Compositor.exe -OutputDirectory "$env:RUNNER_TEMP/compositor-checks"
+      - name: Publish versioned release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: ./windows/tools/PublishRelease.ps1 -Repository $env:RELEASE_REPOSITORY -Directory ./dist

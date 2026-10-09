@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/TestResults/
+**/.avalonia-build-tasks/
+.vs/
+dist/
+qa/
+data/
+*.user
+*.log
+*.trx
+*.pdb
+__pycache__/

@@ -1,0 +1,12 @@
+Compositor Windows community build
+
+Original Compositor and icon: Copyright (c) 2026 Wonder Assembly LLC, MIT (LICENSE).
+Original source: https://github.com/robbietilton/Compositor
+C# / Avalonia community port: https://github.com/chenguisen/Compositor/tree/compositor_win
+Baseline commit: c51be1e57d699edce857115f43bbca579f18dcd4
+
+The app icon is adapted from the original artwork, centered for Windows icon canvases.
+Provenance: windows/src/Compositor.Desktop/Assets/ICON-SOURCE.md
+Dependency licenses and LibRaw source: windows/licenses/
+The installer includes a NuGet dependency inventory and dependency notices.
+The bundled .NET runtime and Inter font have their respective notices in windows/licenses/.
