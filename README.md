@@ -31,7 +31,8 @@
 这些是自动检查；仍需不同 DPI、大图性能和真实 Mac 动效的实机对照。
 Apple Vision 主体选择、完整图层拖放、蒙版变换、软笔实时草稿和 Camera Raw 的一些细节尚未完成。
 构建未签名；当前不能声称所有 Mac 功能或像素、时序完全一致。
-详见 [本阶段报告](docs/06a-responsiveness.md)、[对齐记录](docs/mac-parity-checklist.md)、[阶段汇报](docs/05a-interface.md)
+0.6.0 已覆盖安装并公开发布，[云端构建与程序检查成功](https://github.com/IZILE/Compositor-Windows/actions/runs/37922475602)。
+详见 [安装与发布报告](docs/06b-install-release.md)、[响应速度报告](docs/06a-responsiveness.md)、[对齐记录](docs/mac-parity-checklist.md)、[阶段汇报](docs/05a-interface.md)
 与 [验证摘要](docs/verification-0.6.0.json)。
 
 ## 构建

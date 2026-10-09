@@ -1,0 +1,21 @@
+{
+  "run_id": 37922475602,
+  "url": "https://github.com/IZILE/Compositor-Windows/actions/runs/37922475602",
+  "head_sha": "82baf3f6a59e750839c3fe29aaacd4793d39c2be",
+  "conclusion": "success",
+  "job_id": 113793481285,
+  "log_excerpt": [
+    "2026-10-09T11:15:27.0110841Z Passed!  - Failed:     0, Passed:   887, Skipped:     0, Total:   887, Duration: 4 s - Compositor.Core.Tests.dll (net10.0)",
+    "2026-10-09T11:17:14.6007452Z PASS: published ui",
+    "2026-10-09T11:17:19.8714522Z PASS: published dialogs",
+    "2026-10-09T11:17:22.3816096Z PASS: published windows-en",
+    "2026-10-09T11:17:24.9308168Z PASS: published windows-zh",
+    "2026-10-09T11:17:27.1825142Z PASS: published lifecycle",
+    "2026-10-09T11:17:37.2950092Z PASS: published clicks-en",
+    "2026-10-09T11:17:47.5886748Z PASS: published clicks-zh",
+    "2026-10-09T11:17:49.9115810Z PASS: published shortcuts",
+    "2026-10-09T11:17:55.5874696Z PASS: published camera-raw",
+    "2026-10-09T11:17:59.3486874Z PASS: published performance",
+    "2026-10-09T11:18:03.7836399Z Release v0.6.0 already has an installer; immutable release assets were preserved."
+  ]
+}

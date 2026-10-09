@@ -1,0 +1,23 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+left to right direction
+rectangle "已完成\n连续选中、画布缓存\n后台预览与程序检查" as code #254B3D
+rectangle "已完成\n0.6.0 C 盘覆盖安装\n快捷方式、设置和校验通过" as install #254B3D
+rectangle "已完成\n公开源码和安装包\nGitHub 云端构建成功" as cloud #254B3D
+rectangle "当前交付\n桌面打开同一个 Compositor\n完整依赖、质量优先" as current #34496B
+rectangle "待完成\n复杂计算与同步操作\n不同 DPI、Mac 功能与实机动效\n安全精简依赖" as next #393B42
+code --> install
+code --> cloud
+install --> current
+cloud --> current
+current --> next
+@enduml
