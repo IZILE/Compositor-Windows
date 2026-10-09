@@ -43,7 +43,7 @@ internal sealed class PopupMotion : AvaloniaObject
             child.Transitions = transitions;
             Dispatcher.UIThread.Post(() =>
             {
-                if (_generation == generation && _popup.IsOpen && ReferenceEquals(_child, child)) child.Opacity = _opacity;
+                if (_generation == generation && _popup.IsOpen && ReferenceEquals(_child, child)) Motion.Set(child, Avalonia.Visual.OpacityProperty, _opacity);
             }, DispatcherPriority.Loaded);
         }
         private void Closed(object? sender, EventArgs args) { ++_generation; Restore(); }

@@ -1,0 +1,22 @@
+@startuml
+!theme plain
+skinparam defaultFontName Microsoft YaHei
+skinparam backgroundColor #202124
+skinparam defaultFontColor #F0F0F0
+skinparam ArrowColor #AAAAAA
+skinparam rectangle {
+  BackgroundColor #303238
+  BorderColor #70747B
+  RoundCorner 14
+}
+left to right direction
+rectangle "已完成\n复现同帧往返闪回\n修复位置、颜色与透明度" as motion #254B3D
+rectangle "已完成\n窗口改用多尺寸 ICO\n桌面主体放大，保留阴影" as icons #254B3D
+rectangle "已完成\n887 核心／2205 界面\n90 动画／21 窗口图标检查" as qa #254B3D
+rectangle "当前\n0.6.1 最终程序与安装器\n覆盖安装、公开发布" as release #4A4230
+rectangle "待完成\n不同 DPI 与刷新率实测\nMac 逐帧对照及剩余功能" as pending #393B42
+motion --> qa
+icons --> qa
+qa --> release
+release --> pending
+@enduml

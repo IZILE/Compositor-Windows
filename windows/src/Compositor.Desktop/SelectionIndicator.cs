@@ -32,8 +32,9 @@ internal sealed class SelectionIndicator : Border
         var motion = Position.Transitions;
         var sizeMotion = Transitions;
         if (!_placed || !animate) { Position.Transitions = null; Transitions = null; }
-        Position.X = bounds.X; Position.Y = bounds.Y;
-        Width = bounds.Width; Height = bounds.Height;
+        Motion.Set(Position, TranslateTransform.XProperty, bounds.X);
+        Motion.Set(Position, TranslateTransform.YProperty, bounds.Y);
+        Motion.Set(this, WidthProperty, bounds.Width); Motion.Set(this, HeightProperty, bounds.Height);
         Position.Transitions = motion; Transitions = sizeMotion;
         Destination = bounds; _placed = true;
     }

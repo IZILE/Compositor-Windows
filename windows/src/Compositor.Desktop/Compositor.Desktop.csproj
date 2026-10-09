@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Compositor.Core\Compositor.Core.csproj" />
     <EmbeddedResource Include="Locale\zh-CN.json" LogicalName="Compositor.Desktop.Locale.zh-CN.json" />
     <EmbeddedResource Include="Assets\Compositor.png" LogicalName="Compositor.Desktop.AppIcon.png" />
+    <EmbeddedResource Include="Assets\Compositor.ico" LogicalName="Compositor.Desktop.AppIcon.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,7 +17,7 @@
 
   <PropertyGroup>
     <!-- This independent Windows build has its own version and update channel. -->
-    <Version>0.6.0</Version>
+    <Version>0.6.1</Version>
     <AssemblyName>Compositor</AssemblyName>
     <Product>Compositor Windows Community</Product>
     <Description>Independent Windows image editor based on the Compositor community port.</Description>

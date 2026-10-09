@@ -1,0 +1,31 @@
+{
+  "document": "2048x1536, 6 raster layers",
+  "renderer": "Avalonia headless / real Skia CPU",
+  "results": [
+    {
+      "name": "overlay-redraw",
+      "median_ms": 2.5904,
+      "p95_ms": 3.5333
+    },
+    {
+      "name": "pan",
+      "median_ms": 2.634,
+      "p95_ms": 3.1638
+    },
+    {
+      "name": "zoom",
+      "median_ms": 2.6356,
+      "p95_ms": 2.9499
+    },
+    {
+      "name": "layer-opacity",
+      "median_ms": 50.3584,
+      "p95_ms": 59.8642
+    },
+    {
+      "name": "layer-transform",
+      "median_ms": 50.53,
+      "p95_ms": 59.9284
+    }
+  ]
+}

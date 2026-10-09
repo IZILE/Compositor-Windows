@@ -82,15 +82,15 @@ internal sealed class MenuSelectionPanel : StackPanel
             ?? enabled.FirstOrDefault(item => item.IsPointerOver)
             ?? enabled.FirstOrDefault(item => item.IsSubMenuOpen);
         Highlighted = item;
-        if (item is null) { SetValue(AlphaProperty, 0); return; }
+        if (item is null) { Motion.Set(this, AlphaProperty, 0.0); return; }
         var bounds = item.Bounds;
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
-        if (_placed && _destination == bounds) { SetValue(AlphaProperty, 1); return; }
+        if (_placed && _destination == bounds) { Motion.Set(this, AlphaProperty, 1.0); return; }
         var transitions = Transitions;
         if (!_placed) Transitions = null;
-        SetValue(LeftProperty, bounds.X); SetValue(TopProperty, bounds.Y);
-        SetValue(HighlightWidthProperty, bounds.Width); SetValue(HighlightHeightProperty, bounds.Height);
-        SetValue(AlphaProperty, 1); Transitions = transitions;
+        Motion.Set(this, LeftProperty, bounds.X); Motion.Set(this, TopProperty, bounds.Y);
+        Motion.Set(this, HighlightWidthProperty, bounds.Width); Motion.Set(this, HighlightHeightProperty, bounds.Height);
+        Motion.Set(this, AlphaProperty, 1.0); Transitions = transitions;
         _destination = bounds; _placed = true;
     }
     protected override Size ArrangeOverride(Size finalSize)

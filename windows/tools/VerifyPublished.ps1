@@ -8,7 +8,8 @@ $jobs = @(
     @('windows-en','en','--windows-integration',$false), @('windows-zh','zh-CN','--windows-integration',$false),
     @('lifecycle','en','--lifecycle',$false), @('clicks-en','en','--clicks',$false),
     @('clicks-zh','zh-CN','--clicks',$false), @('shortcuts','en','--shortcuts',$false),
-    @('camera-raw','zh-CN','--camera-raw',$false), @('performance','en','--performance',$false))
+    @('camera-raw','zh-CN','--camera-raw',$false), @('performance','en','--performance',$false),
+    @('native-icons','en','--native-icons',$true))
 $previousData = $env:COMPOSITOR_DATA_DIR
 $previousFastCheck = $env:COMPOSITOR_MAC_QA_ONLY
 $results = @()

@@ -154,6 +154,7 @@ public sealed partial class MainWindow
         ControlMotionChecks.Run(report, output);
         SelectionMotionChecks.Run(report, output);
         MenuMotionChecks.Run(report, output);
+        BurstMotionChecks.Run(report);
         ChangeLanguage("zh-CN"); Layout(); Capture("design-unified-zh-CN.png");
         foreach (var message in CanvasView.RasterCacheSelfCheck()) Check(true, message);
         PreviewWorkerSelfCheck(report);

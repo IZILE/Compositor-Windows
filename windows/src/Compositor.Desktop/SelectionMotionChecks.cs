@@ -38,6 +38,30 @@ internal static class SelectionMotionChecks
         window.Show(); Layout();
         try
         {
+            var rail = new ToolRail(); host.Children.Add(rail); window.Height = 850; Layout();
+            rail.Chosen += rail.Mark;
+            using (var clock = new UiAnimationClock(rail.SelectionPosition))
+            {
+                var start = rail.SelectionPosition.Y;
+                Click(rail.ButtonFor(Tool.Move)!); Click(rail.ButtonFor(Tool.Pan)!);
+                Check(Math.Abs(rail.SelectionPosition.Y - start) < 0.1,
+                    "rail: away-and-back pointer clicks before a frame keep the displayed selection");
+                clock.Pulse(0); clock.Pulse(200); Layout();
+                Check(Math.Abs(rail.SelectionPosition.Y - start) < 0.1,
+                    "rail: cancelled selection never resumes on a later frame");
+                var time = 210;
+                foreach (var tool in new[] { Tool.Move, Tool.Brush, Tool.Zoom, Tool.Clone, Tool.Pan })
+                {
+                    var before = rail.SelectionPosition.Y; Click(rail.ButtonFor(tool)!);
+                    Check(Math.Abs(rail.SelectionPosition.Y - before) < 0.1,
+                        "rail: retarget preserves its position before the next frame: " + tool);
+                    clock.Pulse(time); clock.Pulse(time + 20); Layout(); time += 30;
+                }
+                clock.Pulse(800); Layout();
+                Check(rail.Marked == Tool.Pan && Math.Abs(rail.SelectionPosition.Y - rail.SelectionDestination) < 0.1,
+                    "rail: mixed-distance rapid clicks finish on the latest tool");
+            }
+            host.Children.Clear(); window.Height = 180; Layout();
             string[][] families = [["Paint", "Erase"], ["Liquify", "Blur", "Smudge"],
                 ["Content-Aware", "Create Texture", "Proximity Match"], ["This Layer", "All Layers"],
                 ["Off", "Guided"], ["RGB", "Red", "Green", "Blue"]];
@@ -52,6 +76,10 @@ internal static class SelectionMotionChecks
                 void Pulse(int time) { clock.Pulse(time); Layout(); }
                 var start = indicator.Position.X;
                 var changes = new List<int>(); choice.Changed += changes.Add;
+                Click(choice.ButtonAt(0)); Click(choice.ButtonAt(choice.Count - 1));
+                Check(Math.Abs(indicator.Position.X - start) < 0.1,
+                    $"segments {family}: selecting away and back before the next frame never exposes the abandoned target");
+                changes.Clear();
                 Pulse(0); Click(choice.ButtonAt(0)); Pulse(0);
                 var readings = new List<double>();
                 for (var time = 0; time <= 160; time += 10)
@@ -66,7 +94,10 @@ internal static class SelectionMotionChecks
                     $"segments {family}: unequal label widths settle and a pointer click emits one logical change");
                 Pulse(170); Click(choice.ButtonAt(choice.Count - 1)); Pulse(170); Pulse(210);
                 var before = indicator.Position.X; var beforeWidth = indicator.Width;
-                Click(choice.ButtonAt(0)); Pulse(210);
+                Click(choice.ButtonAt(0));
+                Check(Math.Abs(indicator.Position.X - before) < 0.1 && Math.Abs(indicator.Width - beforeWidth) < 0.1,
+                    $"segments {family}: retargeting between clock ticks keeps the displayed geometry");
+                Pulse(210);
                 Check(Math.Abs(indicator.Position.X - before) < 0.1 && Math.Abs(indicator.Width - beforeWidth) < 0.1,
                     $"segments {family}: reversing continues from the current position and width");
                 for (var index = 0; index < 8; index++)
@@ -93,6 +124,10 @@ internal static class SelectionMotionChecks
             {
                 void Pulse(int time) { clock.Pulse(time); Layout(); }
                 Button Name(int index) => tabs.Pill(ids[index])!.GetVisualDescendants().OfType<Button>().First();
+                var initial = track.Position.X; var initialWidth = track.Width;
+                Click(Name(2)); Click(Name(0));
+                Check(Math.Abs(track.Position.X - initial) < 0.1 && Math.Abs(track.Width - initialWidth) < 0.1,
+                    "tabs: an away-and-back selection in one frame never flashes to the abandoned tab");
                 Pulse(0); Click(Name(2)); Pulse(0);
                 var values = new List<double>();
                 for (var time = 0; time <= 160; time += 10)

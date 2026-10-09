@@ -39,6 +39,10 @@ internal static class MenuMotionChecks
             using (var clock = new UiAnimationClock(top))
             {
                 file.IsSelected = true; Layout(); clock.Pulse(0);
+                var initial = top.HighlightBounds;
+                file.IsSelected = false; filter.IsSelected = true; Layout();
+                filter.IsSelected = false; file.IsSelected = true; Layout();
+                Check(top.HighlightBounds == initial, "top menus: same-frame away-and-back input does not expose an abandoned highlight");
                 file.IsSelected = false; filter.IsSelected = true; Layout(); clock.Pulse(0); clock.Pulse(60); Layout();
                 Check(top.HighlightBounds.X > file.Bounds.X && top.HighlightBounds.X < filter.Bounds.X,
                     "top menu buttons share a highlight with intermediate horizontal positions");
@@ -62,6 +66,10 @@ internal static class MenuMotionChecks
             using (var clock = new UiAnimationClock(panel))
             {
                 first.IsSelected = true; last.IsSelected = false; Layout(); clock.Pulse(0);
+                var initial = panel.HighlightBounds;
+                first.IsSelected = false; last.IsSelected = true; Layout();
+                last.IsSelected = false; first.IsSelected = true; Layout();
+                Check(panel.HighlightBounds == initial, "menus: same-frame away-and-back input preserves the visible rectangle");
                 first.IsSelected = false; last.IsSelected = true; Layout(); clock.Pulse(0);
                 var values = new List<double>();
                 for (var time = 0; time <= 160; time += 10)

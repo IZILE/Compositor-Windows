@@ -131,7 +131,7 @@ internal sealed partial class ToolOptionsBar
             if (_pendingShown != pending)
             {
                 _pendingShown = pending;
-                _pendingTransformActions.Opacity = pending ? 1.0 : 0.0;
+                Motion.Set(_pendingTransformActions, OpacityProperty, pending ? 1.0 : 0.0);
             }
             _pendingTransformActions.IsHitTestVisible = pending;
             _applyTransform.IsEnabled = _cancelTransform.IsEnabled = pending;

@@ -149,6 +149,23 @@ independent source pixels, latest-request checks and retained frame lifetimes. U
 a filter preview. Final filter application, import, saving and very large compositions still contain
 synchronous work. Headless CPU timings are not physical desktop frame-rate measurements.
 
+## 0.6.1 interrupted motion and icons
+
+Rapid away-and-back input can set a transition target equal to its currently displayed value before the
+next frame. With Avalonia 12.1.3 this could briefly expose the abandoned target. Motion.Set holds the
+displayed value while cancelling only that property's transition, preserving other animated properties
+and controls sharing a style. Selection surfaces, menu movement, tab movement, folds, and shared button,
+toggle, field and scrollbar feedback use this path. Dragged values still update immediately.
+Regression checks include no-clock-tick input bursts and transient property callbacks, as well as
+intermediate and final frames. A controlled-clock result is not a physical desktop frame-rate guarantee.
+
+WindowIcon now loads the embedded multi-frame ICO. The previous PNG path produced a 256-pixel cursor
+through the pinned Win32 backend even when requesting a small title-bar icon. The --native-icons
+diagnostic checks the actual Win32 loader at 16 through 64 pixels. The EXE and shortcut ICO contain
+15 sizes through 256 pixels; the artwork body fills more of the larger canvases while retaining the
+original gradient and soft shadow. Installation sends targeted Shell item-change notifications for
+the updated icon and shortcuts. Different physical DPI settings still need desktop comparison.
+
 ## Limits
 
 This customized community build follows the existing C# port, not every feature of the

@@ -8,7 +8,8 @@ internal static class AppIcon
 
     private static WindowIcon Load()
     {
-        using var stream = typeof(AppIcon).Assembly.GetManifestResourceStream("Compositor.Desktop.AppIcon.png")
+        // Windows selects the matching small title-bar and taskbar frame from the ICO.
+        using var stream = typeof(AppIcon).Assembly.GetManifestResourceStream("Compositor.Desktop.AppIcon.ico")
             ?? throw new InvalidOperationException("The application icon is missing.");
         return new WindowIcon(stream);
     }

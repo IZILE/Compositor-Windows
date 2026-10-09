@@ -81,7 +81,7 @@ internal sealed class LayerCard : Grid
         DisclosureButton.Margin = new Thickness(0, 0, -2, 0);
         DisclosureButton.IsVisible = layer.IsGroup;
         _disclosure.Kind = "right";
-        ((RotateTransform)_disclosure.RenderTransform!).Angle = collapsed ? 0 : 90;
+        Motion.Set((RotateTransform)_disclosure.RenderTransform!, RotateTransform.AngleProperty, collapsed ? 0.0 : 90.0);
         _eye.Shown = layer.IsVisible; _eye.InvalidateVisual();
         UiText.Set(EyeButton, ToolTip.TipProperty, layer.IsVisible ? "Hide Layer" : "Show Layer");
         UiText.Set(DisclosureButton, ToolTip.TipProperty, collapsed ? "Expand folder" : "Collapse folder");
@@ -100,7 +100,7 @@ internal sealed class LayerCard : Grid
             : layer.Adjustment is not null ? UiText.Get("Adjustment · Double-click to edit")
             : layer.IsGroup ? UiText.Get("Folder") : $"{layer.Transform.Width:0} × {layer.Transform.Height:0} px";
         ToolTip.SetTip(_details, _details.Text);
-        Opacity = visible ? 1 : 0.35;
+        Motion.Set(this, OpacityProperty, visible ? 1.0 : 0.35);
     }
 
     internal void ShowTarget(bool active, bool mask)
@@ -189,7 +189,7 @@ internal sealed class LayerCard : Grid
         internal bool Active
         {
             get => _active;
-            set { if (_active == value) return; _active = value; SetValue(SelectionAmountProperty, value ? 1 : 0); }
+            set { if (_active == value) return; _active = value; Motion.Set(this, SelectionAmountProperty, value ? 1.0 : 0.0); }
         }
         private string _icon = "";
         internal void Configure(CanvasDocument document, ImageLayer layer)

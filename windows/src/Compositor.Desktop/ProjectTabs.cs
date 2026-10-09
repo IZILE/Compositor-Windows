@@ -168,7 +168,7 @@ internal sealed class ProjectTabs : Panel
             var width = Math.Min(pill.Width, Math.Max(0, finalSize.Width - x));
             pill.Arrange(new Rect(0, 3, width, 28));
             _backs[entry.ID].Arrange(new Rect(0, 3, width, 28));
-            if (!_dragging || entry.ID != _pressed) ((TranslateTransform)pill.RenderTransform!).X = x;
+            if (!_dragging || entry.ID != _pressed) Motion.Set((TranslateTransform)pill.RenderTransform!, TranslateTransform.XProperty, x);
             if (entry.Selected)
                 Indicator.MoveTo(new Rect(((TranslateTransform)pill.RenderTransform!).X, 3, width, 28), animate: !_dragging);
             x += width + 6;

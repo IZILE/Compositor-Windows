@@ -96,8 +96,8 @@ internal sealed partial class CameraRawPanel
             set
             {
                 _expanded = value; _bodyHost.IsHitTestVisible = value;
-                _bodyHost.Opacity = value ? 1 : 0;
-                ((RotateTransform)_chevron.RenderTransform!).Angle = value ? 90 : 0;
+                Motion.Set(_bodyHost, OpacityProperty, value ? 1.0 : 0.0);
+                Motion.Set((RotateTransform)_chevron.RenderTransform!, RotateTransform.AngleProperty, value ? 90.0 : 0.0);
                 UpdateHeight();
             }
         }
@@ -114,7 +114,7 @@ internal sealed partial class CameraRawPanel
                 _body.Measure(new Size(width, double.PositiveInfinity));
                 var height = _expanded ? _body.DesiredSize.Height : 0;
                 // Compare the destination, not the currently animated height, to avoid restarting a transition.
-                if (Math.Abs(_targetHeight - height) > 0.1) { _targetHeight = height; _bodyHost.Height = height; }
+                if (Math.Abs(_targetHeight - height) > 0.1) { _targetHeight = height; Motion.Set(_bodyHost, HeightProperty, height); }
             }
             finally { _settingHeight = false; }
         }

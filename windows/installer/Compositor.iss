@@ -8,7 +8,7 @@
   #define InstallIdentity "{D652136C-E4B4-4194-98F7-7264ABAF317E}"
 #endif
 #ifndef AppVersion
-  #define AppVersion "0.6.0"
+  #define AppVersion "0.6.1"
 #endif
 
 [Setup]
@@ -67,3 +67,28 @@ Filename: "{app}\Compositor.exe"; Description: "{cm:LaunchProgram,Compositor}"; 
 #endif
 
 ; User settings and editable projects are owned by the application. The uninstaller removes installed files only.
+
+[Code]
+procedure SHChangeNotify(EventId: Integer; Flags: Cardinal; const Item1: String; Item2: NativeInt);
+  external 'SHChangeNotify@shell32.dll stdcall';
+
+procedure RefreshInstalledIcon(const Path: String);
+begin
+  if FileExists(Path) then begin
+    { SHCNE_UPDATEITEM and SHCNF_PATHW refresh this item without restarting Explorer. }
+    SHChangeNotify($00002000, $0005, Path, 0);
+    Log('Refreshed installed icon: ' + Path);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then begin
+    RefreshInstalledIcon(ExpandConstant('{app}\Compositor.ico'));
+    RefreshInstalledIcon(ExpandConstant('{app}\Compositor.exe'));
+#ifndef TestInstall
+    RefreshInstalledIcon(ExpandConstant('{autodesktop}\Compositor.lnk'));
+    RefreshInstalledIcon(ExpandConstant('{autoprograms}\Compositor\Compositor.lnk'));
+#endif
+  end;
+end;

@@ -34,12 +34,14 @@ internal static partial class Program
         }
         if (args is ["--settings-path"]) { Console.WriteLine(UserData.DirectoryPath); return 0; }
         if (args is ["--performance", var performanceOutput]) return Performance(performanceOutput);
+        if (args is ["--native-icons", var iconOutput]) return NativeIcons(iconOutput);
         if (args is ["--selection-motion", var motionOutput])
         {
             System.IO.Directory.CreateDirectory(motionOutput);
             BuildHeadless().SetupWithoutStarting();
             var report = new List<string>(); SelectionMotionChecks.Run(report, motionOutput);
             MenuMotionChecks.Run(report, motionOutput);
+            BurstMotionChecks.Run(report);
             Console.WriteLine(string.Join(Environment.NewLine, report)); return 0;
         }
         // Draws the canvas control straight to a PNG, so the interface can be checked without a window.
