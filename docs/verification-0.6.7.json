@@ -110,8 +110,15 @@
   "trimmed_build_shipped": false,
   "native_startup_trials_passed": 3,
   "export_stress_cycles": 12,
-  "cloud_conclusion": "pending",
+  "cloud_conclusion": "success",
   "mac_physical_comparison": "not verified",
   "physical_dpi_matrix": "not verified",
-  "long_term_stability": "not verified"
+  "long_term_stability": "not verified",
+  "cloud_run_url": "https://github.com/IZILE/Compositor-Windows/actions/runs/38035288299",
+  "cloud_core_tests": 1032,
+  "cloud_published_checks": 16,
+  "source_tag_commit": "f551e4ba2b8d117607cf64074d4370d9cb896a19",
+  "source_archive_files": 468,
+  "source_archive_matches_tag": true,
+  "published_assets_unchanged": true
 }

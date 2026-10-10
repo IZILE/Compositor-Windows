@@ -1,0 +1,58 @@
+{
+  "version": "0.6.7",
+  "source_commit": "f551e4ba2b8d117607cf64074d4370d9cb896a19",
+  "run_id": 38035288299,
+  "job_id": 114164339783,
+  "run_url": "https://github.com/IZILE/Compositor-Windows/actions/runs/38035288299",
+  "conclusion": "success",
+  "started_at": "2026-10-10T07:41:25Z",
+  "completed_by": "2026-10-10T07:49:23Z",
+  "core_tests_passed": 1032,
+  "published_checks_passed": 16,
+  "published_check_groups": [
+    "ui",
+    "dialogs",
+    "windows-en",
+    "windows-zh",
+    "lifecycle",
+    "clicks-en",
+    "clicks-zh",
+    "shortcuts",
+    "camera-raw",
+    "performance",
+    "native-icons",
+    "brush-performance",
+    "stroke-tools-performance",
+    "materials",
+    "editing-controls",
+    "workspace-tools"
+  ],
+  "immutable_assets_preserved": true,
+  "assets_unchanged_after_cloud": true,
+  "assets": [
+    {
+      "name": "Compositor-Setup.exe",
+      "id": 627334762,
+      "size": 48169061,
+      "digest": "sha256:24a4356bf410cd675d26e79e3fb970f64d994b4bb3562d791b0a5579a5f96f41",
+      "url": "https://github.com/IZILE/Compositor-Windows/releases/download/v0.6.7/Compositor-Setup.exe"
+    },
+    {
+      "name": "Compositor-Windows-source.zip",
+      "id": 627335064,
+      "size": 7188915,
+      "digest": "sha256:f471d56c99e03f7fb9b42ec00a1cb98e2905785a064763a31660674f2e6c8051",
+      "url": "https://github.com/IZILE/Compositor-Windows/releases/download/v0.6.7/Compositor-Windows-source.zip"
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "id": 627335110,
+      "size": 185,
+      "digest": "sha256:59cd052b45528e1a09201e3d8d88c2b2e153e39435b2238814fe62dfa7bcb057",
+      "url": "https://github.com/IZILE/Compositor-Windows/releases/download/v0.6.7/SHA256SUMS.txt"
+    }
+  ],
+  "limitations": [
+    "Application-owned routed input and automatic rendering; physical DPI, all GPUs and native macOS animation timing remain unverified."
+  ]
+}
