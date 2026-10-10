@@ -1,0 +1,56 @@
+{
+  "document": "2048x1536, 6 raster layers",
+  "renderer": "Avalonia headless / real Skia CPU",
+  "results": [
+    {
+      "name": "overlay-redraw",
+      "median_ms": 2.3646,
+      "p95_ms": 2.9579
+    },
+    {
+      "name": "pan",
+      "median_ms": 2.3359,
+      "p95_ms": 2.6865
+    },
+    {
+      "name": "zoom",
+      "median_ms": 2.4329,
+      "p95_ms": 2.5695
+    },
+    {
+      "name": "layer-opacity",
+      "median_ms": 43.2396,
+      "p95_ms": 47.417
+    },
+    {
+      "name": "layer-transform",
+      "median_ms": 44.901,
+      "p95_ms": 50.8506
+    },
+    {
+      "name": "marquee-draft",
+      "median_ms": 2.4431,
+      "p95_ms": 3.9364
+    },
+    {
+      "name": "lasso-draft-4096",
+      "median_ms": 4.2017,
+      "p95_ms": 6.7821
+    },
+    {
+      "name": "gradient-line",
+      "median_ms": 2.4496,
+      "p95_ms": 2.5849
+    },
+    {
+      "name": "shape-preview-repeated",
+      "median_ms": 3.4435,
+      "p95_ms": 4.4163
+    },
+    {
+      "name": "shape-preview-resize",
+      "median_ms": 6.7148,
+      "p95_ms": 7.2408
+    }
+  ]
+}

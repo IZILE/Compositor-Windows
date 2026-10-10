@@ -206,3 +206,22 @@ The build is unsigned and has no automatic update channel.
 Native file-picker behavior, clipboard ownership/locking across other running applications, and different
 display scaling settings still require manual desktop testing. Automated clipboard checks use the isolated
 headless clipboard plus the native Win32 PNG serializer; they do not modify the system clipboard.
+
+## 0.6.6 selection and type controls
+
+Port the selection-mode and edge-adjustment controls from Mac `LassoControls.swift` and
+the common live-text style controls from `TypeControls.swift`. Marquee, ellipse, lasso,
+polygon and wand share persistent New/Add/Subtract choices; Shift/Alt override one outline.
+Expand, Contract, Feather and Deselect use the existing editable selection engine and undo.
+Wand tolerance is inline and sample size offers point or averaged samples, preserving custom radii.
+
+The Type header adds installed font families, size, color, alignment, tracking and leading
+(0 = Auto). Active drafts preview changes without ending typing; Done commits one history step,
+Cancel restores the original layer, including its original pixel identity. Numeric repeats coalesce.
+Color Cancel preserves pixels and redo; accepting unchanged color avoids empty history entries.
+Font names keep a fixed header width and an ellipsis for long names; catalog loading is deferred.
+Windows caption controls, Ctrl shortcuts and text-field keyboard editing are retained.
+
+The new type controls apply to the whole text layer. Per-range formatting, font hover preview,
+complex-script shaping, AI object selection and physical Mac animation comparison remain pending.
+There are no added runtime packages or project-format changes in this release.

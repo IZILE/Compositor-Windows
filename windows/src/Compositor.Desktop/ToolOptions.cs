@@ -23,6 +23,12 @@ internal sealed class ToolOptions
     /// <summary>The magic wand's own amounts, and whether it reads every visible layer.</summary>
     public WandOptions Wand = new();
     public bool WandAllLayers;
+    public SelectionMode SelectionMode;
+    public int SelectionExpand = 4;
+    public int SelectionContract = 4;
+    public int SelectionFeather = 2;
+
+    public LayerTextStyle TextStyle = new() { Content = "", FontName = "Arial" };
 
     /// <summary>
     /// Whether a new selection's outline is soft-edged, as the Mac build's Anti-alias tick in the lasso's own

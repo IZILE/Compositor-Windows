@@ -12,11 +12,11 @@ namespace Compositor.Core.Document;
 /// </summary>
 public sealed class TextSession
 {
-    private readonly LayerTextStyle? _original;
+    private readonly ImageLayer? _original;
     private readonly SKPoint _origin;
     private LayerTextStyle _style;
 
-    private TextSession(LayerTextStyle style, LayerTextStyle? original, Guid? layer, SKPoint origin)
+    private TextSession(LayerTextStyle style, ImageLayer? original, Guid? layer, SKPoint origin)
     {
         _style = style;
         _original = original;
@@ -39,6 +39,21 @@ public sealed class TextSession
     /// <summary>The style the words are being drawn with, as they stand.</summary>
     public LayerTextStyle Style => _style;
 
+    /// <summary>Changes the draft's style without ending the editing session or moving its caret.</summary>
+    public bool ChangeStyle(CanvasDocument document, Action<LayerTextStyle> change)
+    {
+        var wanted = Copy(_style);
+        change(wanted);
+        // Toolbar style changes must not accidentally replace the words or share editable run lists.
+        wanted.Content = _style.Content;
+        if (!wanted.IsValid || string.IsNullOrWhiteSpace(wanted.FontName)) return false;
+        var before = _style;
+        _style = wanted;
+        if (LayerID is null && Content.Length == 0 || Draw(document)) return true;
+        _style = before;
+        return false;
+    }
+
     /// <summary>Text that starts where it is clicked. Nothing is added to the document until a character is.</summary>
     public static TextSession New(LayerTextStyle style, SKPoint origin) =>
         new(Copy(style), null, null, origin);
@@ -51,7 +66,7 @@ public sealed class TextSession
     {
         if (layer.Text is null) throw new ArgumentException("That layer is not text.", nameof(layer));
         var style = Copy(layer.Text.Style);
-        return new TextSession(style, Copy(layer.Text.Style), layer.ID,
+        return new TextSession(style, layer.Clone(), layer.ID,
             new SKPoint((float)layer.Transform.X, (float)layer.Transform.Y));
     }
 
@@ -203,7 +218,14 @@ public sealed class TextSession
     {
         if (LayerID is not { } id) return false;
         if (_original is null) return LayerEdits.Delete(document, id);
-        return TextEdits.SetStyle(document, id, _original);
+        if (document.Layers.FirstOrDefault(layer => layer.ID == id) is not { } current) return false;
+        // Reuse the original pixels as well as the metadata. Re-rasterizing identical words creates a
+        // different surface identity, which would turn Cancel into an edit and discard redo history.
+        current.Asset = _original.Asset;
+        current.Transform = _original.Transform;
+        current.Name = _original.Name;
+        current.Text = _original.Text;
+        return true;
     }
 
     /// <summary>The rectangle the text occupies on the document, whether it has a layer yet or not.</summary>
@@ -267,7 +289,9 @@ public sealed class TextSession
         Tracking = style.Tracking,
         Leading = style.Leading,
         BoxSize = style.BoxSize,
-        ColorRuns = style.ColorRuns,
-        FontRuns = style.FontRuns,
+        ColorRuns = style.ColorRuns?.Select(run => new LayerTextColorRun
+        { Location = run.Location, Length = run.Length, Red = run.Red, Green = run.Green, Blue = run.Blue }).ToList(),
+        FontRuns = style.FontRuns?.Select(run => new LayerTextFontRun
+        { Location = run.Location, Length = run.Length, FontName = run.FontName }).ToList(),
     };
 }

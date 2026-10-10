@@ -1000,10 +1000,12 @@ public sealed partial class CanvasView : Control
     /// How a new shape meets the selection already there: Option takes away, Shift adds, otherwise it
     /// replaces, as the Mac build reads the modifiers.
     /// </summary>
-    private static SelectionMode ModeOf(KeyModifiers modifiers) =>
+    internal SelectionMode SelectionModeChoice { get; set; }
+    internal Action<SelectionMode>? SelectionModeDisplayed { get; set; }
+    internal SelectionMode ModeOf(KeyModifiers modifiers) =>
         modifiers.HasFlag(KeyModifiers.Alt) ? SelectionMode.Subtract
         : modifiers.HasFlag(KeyModifiers.Shift) ? SelectionMode.Add
-        : SelectionMode.Replace;
+        : SelectionModeChoice;
 
     /// <summary>The outline of what is selected, and of the shape being dragged or clicked out.</summary>
     private void DrawSelection(DrawingContext context)
@@ -1262,6 +1264,7 @@ public sealed partial class CanvasView : Control
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        SelectionModeDisplayed?.Invoke(ModeOf(e.KeyModifiers));
         // A Camera Raw guide comes before everything: the panel has asked to draw lines on the picture, and
         // nothing else the canvas does should happen while the pointer is down.
         if (_document is not null && UprightDrawing && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
@@ -1468,6 +1471,7 @@ public sealed partial class CanvasView : Control
 
     protected override void OnPointerMoved(PointerEventArgs e)
     {
+        SelectionModeDisplayed?.Invoke(_lasso.Count > 0 || _selectionBox is not null ? _draftMode : ModeOf(e.KeyModifiers));
         var now = e.GetPosition(this);
         _brushPointer = now; UpdateBrushCursor();
         if (_zoomDrag is { } zoom)
@@ -1622,6 +1626,7 @@ public sealed partial class CanvasView : Control
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
+        SelectionModeDisplayed?.Invoke(ModeOf(e.KeyModifiers));
         if (_zoomDrag is { } zoom)
         {
             _zoomDrag = null;

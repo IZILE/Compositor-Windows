@@ -47,6 +47,7 @@ internal sealed class InlineNumber : StackPanel
     internal event Action<double>? Changed;
     internal event Action? EditingStarted;
     internal event Action? EditingFinished;
+    internal event Action? EditingCommitted;
 
     internal InlineNumber(string name, double minimum, double maximum, double step = 1,
         string unit = "", bool slider = false, double fieldWidth = 42, double? sliderMaximum = null, string? format = null,
@@ -121,8 +122,8 @@ internal sealed class InlineNumber : StackPanel
         Field.LostFocus += (_, _) => { CommitText(); EditingFinished?.Invoke(); };
         Field.KeyDown += (_, args) =>
         {
-            if (args.Key == Key.Enter) { CommitText(); EditingFinished?.Invoke(); Focus(); args.Handled = true; }
-            else if (args.Key == Key.Escape) { Show(_value); EditingFinished?.Invoke(); Focus(); args.Handled = true; }
+            if (args.Key == Key.Enter) { CommitText(); EditingFinished?.Invoke(); Focus(); EditingCommitted?.Invoke(); args.Handled = true; }
+            else if (args.Key == Key.Escape) { Show(_value); EditingFinished?.Invoke(); Focus(); EditingCommitted?.Invoke(); args.Handled = true; }
             else if (args.Key is Key.Up or Key.Down)
             {
                 var value = ReadText();

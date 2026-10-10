@@ -45,9 +45,6 @@ internal sealed partial class ToolOptionsBar : Border
     /// <summary>A setting was changed by the bar, so the window pushes it to the canvas and says what it is.</summary>
     public event Action? Changed;
 
-    /// <summary>One of the magic wand's amounts was asked for.</summary>
-    public event Action<WandSetting>? WandSettingAsked;
-
     /// <summary>A colour swatch was clicked: true for the foreground, false for the gradient's background.</summary>
     public event Action<bool>? ColourAsked;
 
@@ -80,6 +77,8 @@ internal sealed partial class ToolOptionsBar : Border
         row.Children.Add(Overflow);
         Grid.SetColumn(_pendingTransformActions, 3);
         row.Children.Add(_pendingTransformActions);
+        Grid.SetColumn(_textActions, 3);
+        row.Children.Add(_textActions);
         Child = row;
         Build();
         LayoutUpdated += (_, _) => FitSliders();
@@ -109,6 +108,8 @@ internal sealed partial class ToolOptionsBar : Border
             On("lasso", tool is Tool.Lasso or Tool.Polygon);
             On("eye", tool == Tool.Eyedropper);
             On("wand", tool == Tool.Wand);
+            On("selection", tool is Tool.Marquee or Tool.Ellipse or Tool.Lasso or Tool.Polygon or Tool.Wand);
+            On("antialias", tool is Tool.Ellipse or Tool.Lasso or Tool.Polygon or Tool.Wand);
                 On("gradient", tool == Tool.Gradient);
             On("shape", tool == Tool.Shape);
             On("corner", tool == Tool.Shape && _options.Shape == ShapeKind.Rectangle);
@@ -163,8 +164,6 @@ internal sealed partial class ToolOptionsBar : Border
         _opacity.Value = _options.Brush.Opacity * 100;
         _blurRadius.Value = _options.Brush.BlurRadius;
         _smoothing.Value = _options.Brush.Smoothing * 100;
-        _tolerance.Content = UiText.Format("Tolerance {0}", _options.Wand.Tolerance);
-        _sampleSize.Content = UiText.Format("Sample {0}", _options.Wand.Radius);
         _corner.Value = _options.ShapeCornerRadius;
         _lineWidth.Value = _options.ShapeLineWidth;
         _fill.Show(_options.Brush.Red, _options.Brush.Green, _options.Brush.Blue);
@@ -196,6 +195,7 @@ internal sealed partial class ToolOptionsBar : Border
         _gradientKind.SelectedIndex = (int)_options.Gradient;
         _gradientTo.SelectedIndex = _options.GradientToBackground ? 1 : 0;
         _gradientReversed.IsChecked = _options.GradientReversed;
+        RefreshSelection();
     }
 
     /// <summary>Whether the marquee is drawing an ellipse, which is the tool in hand rather than a setting.</summary>
@@ -240,10 +240,6 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly InlineNumber _opacity = new("Opacity", 1, 100, unit: "%", slider: true, alternateLabels: ["Opacity", "Strength"], adaptiveSlider: true);
     private readonly InlineNumber _blurRadius = new("Radius", 0.5, 50, step: 0.1, unit: "px", slider: true, sliderMaximum: 20, adaptiveSlider: true);
     private readonly InlineNumber _smoothing = new("Smoothing", 0, 100, slider: true, adaptiveSlider: true);
-    private readonly Button _tolerance = new StableCaptionButton { AlternateCaptions = () =>
-        [UiText.Format("Tolerance {0}", 255), UiText.Format("Tolerance {0}", 188)] };
-    private readonly Button _sampleSize = new StableCaptionButton { AlternateCaptions = () =>
-        [UiText.Format("Sample {0}", 100), UiText.Format("Sample {0}", 88)] };
     private readonly InlineNumber _corner = new("Radius", 0, 5000, unit: "px", fieldWidth: 48, slider: true,
         sliderMaximum: 200, adaptiveSlider: true, alternateLabels: ["Radius", "Width"]);
     private readonly InlineNumber _lineWidth = new("Width", 1, 5000, unit: "px", fieldWidth: 48, slider: true,
@@ -310,14 +306,6 @@ internal sealed partial class ToolOptionsBar : Border
         _opacity.Changed += value => Set(ref _options.Brush, _options.Brush with { Opacity = value / 100 });
         _blurRadius.Changed += value => Set(ref _options.Brush, _options.Brush with { BlurRadius = value });
         _smoothing.Changed += value => Set(ref _options.Brush, _options.Brush with { Smoothing = value / 100 });
-        foreach (var (setting, button) in new (WandSetting, Button)[]
-                 {
-                     (WandSetting.Tolerance, _tolerance), (WandSetting.SampleSize, _sampleSize),
-                 })
-        {
-            var which = setting;
-            button.Click += (_, _) => WandSettingAsked?.Invoke(which);
-        }
         _corner.Changed += value => Set(ref _options.ShapeCornerRadius, value);
         _lineWidth.Changed += value => Set(ref _options.ShapeLineWidth, value);
         _fill.Click += (_, _) => ColourAsked?.Invoke(true);
@@ -434,14 +422,15 @@ internal sealed partial class ToolOptionsBar : Border
         Cell("blur", _blurRadius);
         Cell("marqueeShape", _marqueeShape);
         Cell("lasso", _lassoKind);
-        Cell("lasso", _antialias);
+        Cell("antialias", _antialias);
         // The eyedropper's own row, which the Mac keeps in the picker's controls: the ring is the only thing that
         // tool can be told.
         Cell("eye", _sampleRing);
-        Cell("wand", _tolerance);
-        Cell("wand", _sampleSize);
+        Cell("wand", _wandTolerance);
+        Cell("wand", _wandSample);
         Cell("wand", _contiguous);
         Cell("wand", _wandAll);
+        BuildSelection();
         Cell("gradient", _gradientKind);
         Cell("gradient", _gradients);
         Cell("gradient", _gradientTo);
@@ -456,7 +445,7 @@ internal sealed partial class ToolOptionsBar : Border
         Cell("crop", _cropApply);
         Cell("crop", _cropCancel);
         BuildTransform();
-        Cell("type", _editText);
+        BuildType();
         Cell("zoom", _zoom);
     }
 

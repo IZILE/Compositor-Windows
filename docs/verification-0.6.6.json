@@ -1,0 +1,108 @@
+{
+  "version": "0.6.6",
+  "platform": "Windows x64",
+  "core_tests_passed": 1011,
+  "checks": [
+    {
+      "name": "ui",
+      "exit_code": 0,
+      "report_lines": 4496,
+      "pass_lines": 4496
+    },
+    {
+      "name": "dialogs",
+      "exit_code": 0,
+      "report_lines": 103,
+      "pass_lines": 103
+    },
+    {
+      "name": "windows-en",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "windows-zh",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "lifecycle",
+      "exit_code": 0,
+      "report_lines": 26,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-en",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-zh",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "shortcuts",
+      "exit_code": 0,
+      "report_lines": 117,
+      "pass_lines": 0
+    },
+    {
+      "name": "camera-raw",
+      "exit_code": 0,
+      "report_lines": 14,
+      "pass_lines": 0
+    },
+    {
+      "name": "performance",
+      "exit_code": 0,
+      "report_lines": 23,
+      "pass_lines": 13
+    },
+    {
+      "name": "native-icons",
+      "exit_code": 0,
+      "report_lines": 21,
+      "pass_lines": 21
+    },
+    {
+      "name": "brush-performance",
+      "exit_code": 0,
+      "report_lines": 19,
+      "pass_lines": 0
+    },
+    {
+      "name": "stroke-tools-performance",
+      "exit_code": 0,
+      "report_lines": 8,
+      "pass_lines": 4
+    },
+    {
+      "name": "materials",
+      "exit_code": 0,
+      "report_lines": 71,
+      "pass_lines": 71
+    },
+    {
+      "name": "editing-controls",
+      "exit_code": 0,
+      "report_lines": 102,
+      "pass_lines": 102
+    }
+  ],
+  "exe_sha256": "cc4d857d3743f7e20e3e8632c63653163fdce7fbdddc480c739b8c59bb388eb5",
+  "installer_sha256": "6eca1c127ea332a658ebb50d8265656aaff4dff29747dc582055469c91824f91",
+  "installer_first_upgrade_uninstall": "passed",
+  "settings_preserved": true,
+  "destination_selectable": true,
+  "project_format_changed": false,
+  "new_runtime_dependencies": false,
+  "trimmed_build_shipped": false,
+  "cloud_conclusion": "pending",
+  "mac_physical_comparison": "not verified",
+  "physical_dpi_comparison": "not verified"
+}

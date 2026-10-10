@@ -699,5 +699,17 @@
   "The material library contains an invalid preset.": "素材库中有无效预设。",
   "The material library format is not supported.": "不支持此素材库格式。",
   "A pattern image may be at most 16 MB.": "图案图片不能超过 16 MB。",
-  "Choose a PNG, JPEG or WebP pattern up to 2048 × 2048 pixels.": "请选择不超过 2048 × 2048 像素的 PNG、JPEG 或 WebP 图案。"
+  "Choose a PNG, JPEG or WebP pattern up to 2048 × 2048 pixels.": "请选择不超过 2048 × 2048 像素的 PNG、JPEG 或 WebP 图案。",
+  "Point Sample": "取样点",
+  "3 × 3 Average": "3 × 3 平均",
+  "5 × 5 Average": "5 × 5 平均",
+  "9 × 9 Average": "9 × 9 平均",
+  "11 × 11 Average": "11 × 11 平均",
+  "31 × 31 Average": "31 × 31 平均",
+  "51 × 51 Average": "51 × 51 平均",
+  "Text color": "文字颜色",
+  "0 = Auto (120% of font size)": "0 = 自动（字号的 120%）",
+  "Expand": "扩展",
+  "Contract": "收缩",
+  "Done": "完成"
 }

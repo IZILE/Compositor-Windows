@@ -397,7 +397,6 @@ public sealed partial class MainWindow : Window
         _optionsBar.BrushesAsked += () => _ = ChooseBrush();
         _optionsBar.ShapesAsked += () => _ = ChooseShape();
         _optionsBar.GradientsAsked += () => _ = ChooseGradient();
-        _optionsBar.WandSettingAsked += which => _ = SetWand(which);
         _optionsBar.ColourAsked += ChooseColour;
         _optionsBar.FlipAsked += horizontally =>
         {
@@ -409,6 +408,7 @@ public sealed partial class MainWindow : Window
         _optionsBar.CropApplied += ApplyCrop;
         _optionsBar.CropCancelled += CancelCrop;
         _optionsBar.TextAsked += () => _ = EditText();
+        WireEditingControls();
         // Picking the marquee's shape or the lasso's kind is picking the tool that draws it, so the bar goes
         // through SetTool and the menu, the rail and the canvas all follow.
         _optionsBar.MarqueeShapeChosen += ellipse => SetTool(ellipse ? Tool.Ellipse : Tool.Marquee);
@@ -1027,6 +1027,7 @@ public sealed partial class MainWindow : Window
     /// <summary>A key pressed anywhere in the window: the table says what it does, if anything.</summary>
     private void KeyPressed(object? sender, KeyEventArgs e)
     {
+        ShowSelectionModifiers(e.KeyModifiers);
         // The Windows key is Windows', and a chord made with it is not one the table can hold.
         if (e.Handled || e.KeyModifiers.HasFlag(KeyModifiers.Meta)) return;
         var held = ShortcutKeys.Held(e.KeyModifiers);
@@ -1050,6 +1051,8 @@ public sealed partial class MainWindow : Window
     /// <summary>A key let go: the Hand the space bar was holding gives the tool back.</summary>
     private void KeyLetGo(object? sender, KeyEventArgs e)
     {
+        ShowSelectionModifiers(e.KeyModifiers & (e.Key is Key.LeftShift or Key.RightShift ? ~KeyModifiers.Shift
+            : e.Key is Key.LeftAlt or Key.RightAlt ? ~KeyModifiers.Alt : (KeyModifiers)(-1)));
         if (e.Key != Key.Space || _toolBeforeHand is not { } held) return;
         _toolBeforeHand = null;
         if (_tool == Tool.Pan) SetTool(held);
@@ -3599,6 +3602,7 @@ public sealed partial class MainWindow : Window
             : null;
         _optionsBar.Show(_tool, _document is not null, layer?.Mask is not null && _options.PaintOnMask);
         _optionsBar.ShowZoom(_canvas.Zoom * 100);
+        RefreshEditingControls();
         ShowTransformInspector();
     }
 
@@ -5176,15 +5180,7 @@ public sealed partial class MainWindow : Window
         }
         else
         {
-            _text = TextSession.New(new LayerTextStyle
-            {
-                Content = "",
-                FontName = "Arial",
-                FontSize = 72,
-                Red = _options.Brush.Red,
-                Green = _options.Brush.Green,
-                Blue = _options.Brush.Blue,
-            }, origin);
+            _text = TextSession.New(_options.TextStyle, origin);
             _history.Begin("Type", document, Selected);
         }
         _canvas.BeginText();
@@ -5760,6 +5756,7 @@ public sealed partial class MainWindow : Window
         UpdateLayerMenu();
         if (_transforming is null) ShowTransformBox();
         ShowTransformInspector();
+        RefreshEditingControls();
         var undo = _history.CanUndo ? $"Undo {_history.UndoName}" : "";
         var redo = _history.CanRedo ? $"Redo {_history.RedoName}" : "";
         var edited = _history.IsModified ? "edited" : "";

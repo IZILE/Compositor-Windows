@@ -1,0 +1,17 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 12A：选区与文字工具
+rectangle "已完成\n对照 Mac 选区与文字控件源码\n保留 Windows 操作与中英切换" as audit #DDF2DF
+rectangle "已完成\n选区模式、边缘调整、魔棒参数\n文字字体、字号、颜色与排版参数" as tools #DDF2DF
+rectangle "已完成\n实时修改、连续选中与窄窗口布局\n取消恢复原图，保留撤销与重做" as behavior #DDF2DF
+rectangle "已完成\n1011 核心测试、15 组最终程序检查\n覆盖安装，保留快捷方式和设置" as local #DDF2DF
+rectangle "当前\n发布 0.6.6 源码与安装包\n独立 Windows 云端构建和验证" as publish #FFF0BB
+rectangle "后续待完成\n部分文字格式、图层与蒙版功能\nMac 实机、物理 DPI 和大图性能" as pending #E7E9ED
+audit --> tools
+tools --> behavior
+behavior --> local
+local --> publish
+publish --> pending
+@enduml
