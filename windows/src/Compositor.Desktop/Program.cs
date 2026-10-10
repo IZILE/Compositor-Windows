@@ -127,6 +127,12 @@ internal static partial class Program
             var sample = Path.Combine(editingOutput, "GettingStarted.comp"); SampleProject.Create(sample);
             Console.WriteLine(new MainWindow().EditingControlsSelfCheck(sample, Path.GetFullPath(editingOutput))); return 0;
         }
+        if (args is ["--workspace-tools", var workspaceOutput])
+        {
+            BuildHeadless().SetupWithoutStarting(); Directory.CreateDirectory(workspaceOutput);
+            var sample = Path.Combine(workspaceOutput, "GettingStarted.comp"); SampleProject.Create(sample);
+            Console.WriteLine(new MainWindow().WorkspaceToolsSelfCheck(sample, Path.GetFullPath(workspaceOutput))); return 0;
+        }
         if (args is ["--dialog-check", var dialogCheckOutput]) return DialogCheck(dialogCheckOutput);
         // `--camera-raw` drives the Camera Raw panel without a pointer — opened on a layer, amounts moved, the
         // preview run, then Apply and Cancel — and draws the window with the panel still up, which is the only

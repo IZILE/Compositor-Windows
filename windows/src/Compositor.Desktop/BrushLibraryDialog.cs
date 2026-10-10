@@ -74,15 +74,14 @@ internal sealed class BrushLibraryDialog : DialogWindow
         var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,240"), ColumnSpacing = 18 };
         body.Children.Add(_scroll);
         var detail = new StackPanel { Spacing = 14, Children = {
-            new Border { Padding = new Thickness(10), Background = Skin.PasteboardBrush, CornerRadius = new CornerRadius(8), Child = _preview }, _previewName,
-            new TextBlock { [!TextBlock.TextProperty] = UiText.Bind("Live preview · Choose an item to see its actual appearance."), TextWrapping = TextWrapping.Wrap, Foreground = Skin.SecondaryBrush }
+            new Border { Padding = new Thickness(10), Background = Skin.PasteboardBrush, CornerRadius = new CornerRadius(8), Child = _preview }, _previewName
         } };
         Grid.SetColumn(detail,1); body.Children.Add(detail);
-        var grid = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto"), Margin = new Thickness(18), RowSpacing = 12 };
-        grid.Children.Add(new TextBlock { [!TextBlock.TextProperty] = UiText.Bind("Import ABR sampled tips or PNG masks. ABR descriptor names, angle, texture, scattering and dual-brush settings are not imported."), TextWrapping = TextWrapping.Wrap });
-        Grid.SetRow(body, 1); grid.Children.Add(body);
-        Grid.SetRow(_status, 2); grid.Children.Add(_status);
-        Grid.SetRow(actions, 3); grid.Children.Add(actions); Content = grid;
+        UiText.Set(_import, ToolTip.TipProperty, "Import ABR sampled tips or PNG masks. ABR descriptor names, angle, texture, scattering and dual-brush settings are not imported.");
+        var grid = new Grid { RowDefinitions = new RowDefinitions("*,Auto,Auto"), Margin = new Thickness(18), RowSpacing = 12 };
+        grid.Children.Add(body);
+        Grid.SetRow(_status, 1); grid.Children.Add(_status);
+        Grid.SetRow(actions, 2); grid.Children.Add(actions); Content = grid;
         Rebuild();
         var tipIndex = current.Tip is { } tip ? _choices.FindIndex(item => item.Tip?.ID == tip.ID) : -1;
         Pick(tipIndex >= 0 ? tipIndex : current.Hardness < 1 ? 1 : 0);

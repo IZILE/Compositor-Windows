@@ -15,15 +15,19 @@ public static class TiledPngWriter
     /// <summary>Wide enough that most documents are one band, small enough to stay well under a buffer.</summary>
     public const int DefaultTileSize = 1024;
 
-    public static void Write(CanvasDocument document, string path, int tileSize = DefaultTileSize)
+    public static void Write(CanvasDocument document, string path, int tileSize = DefaultTileSize,
+        PngCompression compression = PngCompression.Balanced, CancellationToken cancellation = default)
     {
         using var file = File.Create(path);
-        Write(document, file, tileSize);
+        Write(document, file, tileSize, compression, cancellation);
     }
 
-    public static void Write(CanvasDocument document, Stream output, int tileSize = DefaultTileSize)
+    public static void Write(CanvasDocument document, Stream output, int tileSize = DefaultTileSize,
+        PngCompression compression = PngCompression.Balanced, CancellationToken cancellation = default)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(tileSize, 1);
+        if (!Enum.IsDefined(compression)) throw new ArgumentOutOfRangeException(nameof(compression));
+        cancellation.ThrowIfCancellationRequested();
         output.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
         Span<byte> header = stackalloc byte[13];
         WriteBigEndian(header[..4], document.Width);
@@ -36,22 +40,29 @@ public static class TiledPngWriter
         WriteChunk(output, "IHDR", header);
 
         using (var chunks = new ChunkStream(output))
-        using (var deflate = new ZLibStream(chunks, CompressionLevel.Optimal, leaveOpen: true))
+        using (var deflate = new ZLibStream(chunks, compression switch
+        { PngCompression.Fast => CompressionLevel.Fastest, PngCompression.Smallest => CompressionLevel.SmallestSize,
+            _ => CompressionLevel.Optimal }, leaveOpen: true))
         {
             var row = new byte[document.Width * 4];
+            var previous = new byte[row.Length];
+            var filtered = new byte[row.Length];
             for (var top = 0; top < document.Height; top += tileSize)
             {
+                cancellation.ThrowIfCancellationRequested();
                 var band = Math.Min(tileSize, document.Height - top);
                 var tiles = new List<SKBitmap>();
                 try
                 {
                     for (var left = 0; left < document.Width; left += tileSize)
                     {
+                        cancellation.ThrowIfCancellationRequested();
                         var width = Math.Min(tileSize, document.Width - left);
                         tiles.Add(DocumentRenderer.RenderRegion(document, SKRectI.Create(left, top, width, band)));
                     }
                     for (var y = 0; y < band; y++)
                     {
+                        if ((y & 15) == 0) cancellation.ThrowIfCancellationRequested();
                         var at = 0;
                         foreach (var tile in tiles)
                         {
@@ -75,8 +86,10 @@ public static class TiledPngWriter
                                 row[at + 3] = alpha;
                             }
                         }
-                        deflate.WriteByte(0); // no filter
-                        deflate.Write(row);
+                        var filter = Filter(row, previous, filtered, compression);
+                        deflate.WriteByte(filter);
+                        deflate.Write(filtered);
+                        (row, previous) = (previous, row);
                     }
                 }
                 finally
@@ -86,6 +99,41 @@ public static class TiledPngWriter
             }
         }
         WriteChunk(output, "IEND", []);
+    }
+
+    /// <summary>Predict neighboring pixels before deflate; all presets retain exactly the same RGBA values.</summary>
+    private static byte Filter(byte[] row, byte[] previous, byte[] output, PngCompression compression)
+    {
+        byte best = 1;
+        if (compression != PngCompression.Fast)
+        {
+            long none = 0, sub = 0, up = 0, paeth = 0;
+            for (var i = 0; i < row.Length; i++)
+            {
+                var left = i < 4 ? 0 : row[i - 4];
+                none += Score(row[i]); sub += Score(row[i] - left); up += Score(row[i] - previous[i]);
+                if (compression == PngCompression.Smallest) paeth += Score(row[i] - Paeth(left, previous[i], i < 4 ? 0 : previous[i - 4]));
+            }
+            var score = none; best = 0;
+            if (sub < score) { score = sub; best = 1; }
+            if (up < score) { score = up; best = 2; }
+            if (compression == PngCompression.Smallest && paeth < score) best = 4;
+        }
+        for (var i = 0; i < row.Length; i++)
+        {
+            var left = i < 4 ? 0 : row[i - 4];
+            output[i] = unchecked((byte)(row[i] - (best switch
+            { 1 => left, 2 => previous[i], 4 => Paeth(left, previous[i], i < 4 ? 0 : previous[i - 4]), _ => 0 })));
+        }
+        return best;
+    }
+
+    private static int Score(int value) => Math.Abs((int)unchecked((sbyte)value));
+    private static int Paeth(int left, int up, int corner)
+    {
+        var p = left + up - corner;
+        var a = Math.Abs(p - left); var b = Math.Abs(p - up); var c = Math.Abs(p - corner);
+        return a <= b && a <= c ? left : b <= c ? up : corner;
     }
 
     private static void WriteChunk(Stream output, string type, ReadOnlySpan<byte> data)

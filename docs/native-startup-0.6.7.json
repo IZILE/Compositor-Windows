@@ -1,0 +1,49 @@
+{
+  "version": "0.6.7",
+  "trials": [
+    {
+      "trial": 1,
+      "elapsed_seconds": 1.8841019999999844,
+      "succeeded": true,
+      "WasCloaked": true,
+      "FrameRendered": true,
+      "TimedOut": false,
+      "native_cloaked": 0,
+      "query_result": 0,
+      "Width": 1180,
+      "Height": 780,
+      "StartupPreparationCount": 1,
+      "limitation": "Native lifecycle and render completion, not a physical display recording."
+    },
+    {
+      "trial": 2,
+      "elapsed_seconds": 1.3486769000000436,
+      "succeeded": true,
+      "WasCloaked": true,
+      "FrameRendered": true,
+      "TimedOut": false,
+      "native_cloaked": 0,
+      "query_result": 0,
+      "Width": 1180,
+      "Height": 780,
+      "StartupPreparationCount": 1,
+      "limitation": "Native lifecycle and render completion, not a physical display recording."
+    },
+    {
+      "trial": 3,
+      "elapsed_seconds": 1.3624621999999817,
+      "succeeded": true,
+      "WasCloaked": true,
+      "FrameRendered": true,
+      "TimedOut": false,
+      "native_cloaked": 0,
+      "query_result": 0,
+      "Width": 1180,
+      "Height": 780,
+      "StartupPreparationCount": 1,
+      "limitation": "Native lifecycle and render completion, not a physical display recording."
+    }
+  ],
+  "conclusion": "passed",
+  "limitation": "Native lifecycle and render completion; not a physical high-speed recording or all GPU/DPI combinations."
+}

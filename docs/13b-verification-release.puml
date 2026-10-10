@@ -1,0 +1,17 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 13B：排版与完整检查
+rectangle "已完成\n工具栏按名称自然宽度排列\n间距收紧、同组切换稳定" as layout #DDF2DF
+rectangle "已完成\n1032 核心测试、16 组最终程序检查\n4043 界面 / 1025 新增交互断言" as tests #DDF2DF
+rectangle "已完成\n12 轮导出压力、3 次原生启动\n安装／升级／卸载、保留设置" as stability #DDF2DF
+rectangle "已完成\n固定桌面快捷方式、覆盖安装\n安装目录可选择" as install #DDF2DF
+rectangle "当前\n公开发布 0.6.7、源码与校验文件\n独立 Windows 云端验证" as publication #FFF0BB
+rectangle "待完成\n复杂工具提交与多图层合成性能\n剩余 Mac 功能、实机 DPI 与动画对照" as pending #E7E9ED
+layout --> tests
+tests --> stability
+stability --> install
+install --> publication
+publication --> pending
+@enduml

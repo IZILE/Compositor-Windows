@@ -161,7 +161,7 @@ public static class TextEdits
 
     /// <summary>The face to set text in, falling back to the system face as the Mac build falls back.</summary>
     public static SKTypeface Typeface(string? fontName) =>
-        Faces.GetOrAdd(fontName ?? "", name => name.Length > 0
+        Compositor.Core.IO.FontLibrary.Current.Resolve(fontName) ?? Faces.GetOrAdd(fontName ?? "", name => name.Length > 0
             ? SKTypeface.FromFamilyName(name) ?? SKTypeface.Default
             : SKTypeface.Default);
 

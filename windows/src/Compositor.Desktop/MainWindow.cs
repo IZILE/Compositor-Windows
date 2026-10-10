@@ -747,7 +747,7 @@ public sealed partial class MainWindow : Window
         var footer = LayerFooter();
         DockPanel.SetDock(footer, Dock.Bottom);
         layers.Children.Add(footer);
-        layers.Children.Add(_layers);
+        layers.Children.Add(LayerDragPanel());
         _layersSide.Child = layers;
 
         var statusBar = new Border
@@ -2809,6 +2809,7 @@ public sealed partial class MainWindow : Window
     {
         if (!ReferenceEquals(tab, _open))
         {
+            CancelLayerDrag();
             FinishNumberTransform(); ApplyPersistentTransform();
             CommitText();
             _open.SelectedRow = _layers.SelectedIndex;
@@ -3065,6 +3066,7 @@ public sealed partial class MainWindow : Window
         _checkingClose = true;
         try
         {
+            foreach (var exporter in OwnedWindows.OfType<ImageExportDialog>().ToArray()) await exporter.CancelExport();
             if (await MayCloseAll())
             {
                 _allowClose = true;
@@ -3513,6 +3515,7 @@ public sealed partial class MainWindow : Window
             Tool.Wand => SelectionTool.Wand,
             _ => SelectionTool.None,
         };
+        _canvas.RefreshToolCursor();
         // An outline that is half drawn is let go when the tool changes, rather than left hanging.
         _canvas.CancelDraft();
         foreach (var (which, item) in _toolItems) item.IsChecked = which == tool;
@@ -5899,64 +5902,46 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async void ExportPng()
-    {
-        if (_document is not { } document)
-        {
-            Say("Nothing to export yet.");
-            return;
-        }
-        try
-        {
-            var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-            {
-                Title = UiText.Get("Export PNG"),
-                SuggestedFileName = "Compositor export.png",
-                DefaultExtension = "png",
-            });
-            if (file?.TryGetLocalPath() is not { } path) return;
-            // A band of tiles at a time, so the canvas size does not have to fit in one buffer.
-            TiledPngWriter.Write(document, path);
-            Say($"Exported {path}");
-        }
-        catch (Exception error)
-        {
-            Say($"Could not export: {error.Message}");
-        }
-    }
+    private async void ExportPng() => await ExportImage(ImageExportFormat.Png);
 
     /// <summary>
     /// File ▸ Export JPEG: the flattened document written at a quality that is asked for. A JPEG has to be
     /// made whole, so a canvas too big to hold is refused rather than quietly written wrong.
     /// </summary>
-    private async Task ExportJpeg()
+    private Task ExportJpeg() => ExportImage(ImageExportFormat.Jpeg);
+
+    private bool _exportingImage;
+    private async Task ExportImage(ImageExportFormat format)
     {
+        if (_exportingImage) return;
         if (_document is not { } document)
         {
             Say("Nothing to export yet.");
             return;
         }
+        _exportingImage = true;
         try
         {
+            CommitText(); FinishNumberTransform(); ApplyPersistentTransform(); EndTextStyle();
+            using var prepared = await ImageExportDialog.Ask(this, document, format);
+            if (prepared is null) return;
+            var png = format == ImageExportFormat.Png;
             var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
             {
-                Title = UiText.Get("Export JPEG"),
-                SuggestedFileName = "Compositor export.jpg",
-                DefaultExtension = "jpg",
+                Title = UiText.Get(png ? "Export PNG" : "Export JPEG"),
+                SuggestedFileName = png ? "Compositor export.png" : "Compositor export.jpg",
+                DefaultExtension = png ? "png" : "jpg",
+                FileTypeChoices = [new FilePickerFileType(png ? "PNG" : "JPEG") { Patterns = png ? ["*.png"] : ["*.jpg", "*.jpeg"] }],
             });
             if (file?.TryGetLocalPath() is not { } path) return;
-            if (await QualityDialog.Ask(this) is not { } quality) return;
-            if (!ImageWriter.Write(document, path, quality))
-            {
-                Say("That canvas is too large to write as one JPEG.");
-                return;
-            }
-            Say($"Exported {path}");
+            await prepared.SaveTo(path);
+            Say(UiText.Format("Exported {0}", path));
         }
         catch (Exception error)
         {
-            Say($"Could not export: {error.Message}");
+            Say(UiText.Format("Could not export: {0}", error.Message));
         }
+        finally { _exportingImage = false; }
     }
 
     private static string Spell<T>(T value) where T : struct, Enum =>

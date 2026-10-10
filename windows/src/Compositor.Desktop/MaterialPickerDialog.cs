@@ -66,10 +66,9 @@ internal sealed class MaterialPickerDialog<T> : DialogWindow where T : class
         var scroll = new ScrollViewer { VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Content = new Grid { Children = { _selection, _rows } } };
         var detail = new StackPanel { Spacing = 14, Children = {
-            new Border { Padding = new Thickness(10), Background = Skin.PasteboardBrush, CornerRadius = new CornerRadius(8), Child = _preview }, _name,
-            new TextBlock { [!TextBlock.TextProperty] = UiText.Bind("Live preview · Choose an item to see its actual appearance."), TextWrapping = TextWrapping.Wrap, Foreground = Skin.SecondaryBrush },
-            new TextBlock { [!TextBlock.TextProperty] = UiText.Bind(hint), TextWrapping = TextWrapping.Wrap, Foreground = Skin.SecondaryBrush }
+            new Border { Padding = new Thickness(10), Background = Skin.PasteboardBrush, CornerRadius = new CornerRadius(8), Child = _preview }, _name
         } };
+        UiText.Set(_import, ToolTip.TipProperty, hint);
         var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,240"), ColumnSpacing = 18 };
         body.Children.Add(scroll); Grid.SetColumn(detail,1); body.Children.Add(detail);
         var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") }; actions.Children.Add(_import);
@@ -144,9 +143,9 @@ internal static class MaterialPickers
         "Import GGR gradients with fixed, linear RGB segments.",foreground is null ? MaterialPresets.Gradients : new[] {foreground}.Concat(MaterialPresets.Gradients).ToArray(),p=>p.Name,MaterialImport.Gradients,
         new FilePickerFileType("GGR") { Patterns=["*.ggr"] },library??UserData.File("gradients.json"),current);
     internal static MaterialPickerDialog<PatternPreset> Patterns(string? library = null) => new("Patterns",
-        "Import PNG, JPEG or WebP tiles up to 2048 × 2048 pixels. Fill follows the current selection and supports undo.",MaterialPresets.Patterns,p=>p.Name,MaterialImport.Patterns,
+        "PNG / JPEG / WebP · Up to 2048 × 2048 pixels",MaterialPresets.Patterns,p=>p.Name,MaterialImport.Patterns,
         new FilePickerFileType("PNG / JPEG / WebP") { Patterns=["*.png","*.jpg","*.jpeg","*.webp"] },library??UserData.File("patterns.json"));
     internal static MaterialPickerDialog<ColorPreset> Colors(string? library = null) => new("Swatches",
-        "Import GPL color palettes. Choose a color to preview it in the color picker.",MaterialPresets.Colors,p=>p.Name,MaterialImport.Colors,
+        "GPL color palettes",MaterialPresets.Colors,p=>p.Name,MaterialImport.Colors,
         new FilePickerFileType("GPL") { Patterns=["*.gpl"] },library??UserData.File("swatches.json"));
 }

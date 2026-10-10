@@ -20,7 +20,10 @@ internal static class UiLayoutAudit
             var natural = new FormattedText(caption, CultureInfo.CurrentCulture, text.FlowDirection,
                 new Typeface(text.FontFamily, text.FontStyle, text.FontWeight, text.FontStretch), text.FontSize, text.Foreground);
             if (text.TextWrapping == TextWrapping.NoWrap && natural.Width > text.Bounds.Width + 1.5)
-                throw new InvalidOperationException($"{context}: clipped caption '{text.Text}': needs {natural.Width:0.##}, has {text.Bounds.Width:0.##}.");
+            {
+                var button = text.GetVisualAncestors().OfType<Button>().FirstOrDefault();
+                throw new InvalidOperationException($"{context}: clipped caption '{text.Text}': needs {natural.Width:0.##}, has {text.Bounds.Width:0.##}; font {text.FontFamily}/{text.FontSize}/{text.FontWeight}; button {button?.Width}/{button?.Bounds}/{button?.Padding}.");
+            }
             if (text.TextLayout.Height > text.Bounds.Height + 1.5)
                 throw new InvalidOperationException($"{context}: clipped caption height '{text.Text}'.");
             count++;

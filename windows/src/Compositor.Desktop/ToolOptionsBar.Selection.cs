@@ -50,7 +50,9 @@ internal sealed partial class ToolOptionsBar
             var button = new Button { [!ContentControl.ContentProperty] = UiText.Bind(adjustment.ToString()), Focusable = false };
             button.Click += (_, _) => SelectionAdjusted?.Invoke(adjustment, (int)field.Value);
             _selectionAdjustments[(int)adjustment] = button;
-            Cell("selection", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { button, field } });
+            Cell("selection", new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5,
+                Children = { button, field }, VerticalAlignment = VerticalAlignment.Center });
+            button.VerticalAlignment = VerticalAlignment.Center;
         }
         _deselectSelection.Click += (_, _) => SelectionDeselected?.Invoke();
         Cell("selection", _deselectSelection);

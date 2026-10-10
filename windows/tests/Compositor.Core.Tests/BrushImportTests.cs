@@ -104,7 +104,10 @@ public class BrushImportTests
         else Assert.True(BrushEdits.Paint(complete, complete.Layers[0].ID, path, settings));
         byte[] Pixels(CanvasDocument document) => (mask ? document.Layers[0].Mask!.Asset : document.Layers[0].Asset)!.Image.GetPixelSpan().ToArray();
         Assert.Equal(Pixels(complete), Pixels(incremental)); Assert.Equal(1, history.UndoCount);
-        var undo = history.Undo()!.Value.Document!.Layers[0]; Assert.Same(original, undo.Asset); Assert.Same(originalMask, undo.Mask);
+        var undo = history.Undo()!.Value.Document!.Layers[0]; Assert.Same(original, undo.Asset);
+        Assert.Same(originalMask?.Asset, undo.Mask?.Asset); Assert.Equal(originalMask?.Placement, undo.Mask?.Placement);
+        Assert.Equal(originalMask?.IsEnabled, undo.Mask?.IsEnabled); Assert.Equal(originalMask?.IsLinked, undo.Mask?.IsLinked);
+        if (originalMask is not null) Assert.NotSame(originalMask, undo.Mask);
         Assert.Equal(Pixels(incremental), Pixels(history.Redo()!.Value.Document!));
     }
 

@@ -60,7 +60,10 @@ public class PreparedBrushTests
         if (mask) Assert.True(BrushEdits.PaintMask(complete, complete.Layers[0].ID, Stroke, settings));
         else { BrushEdits.EnsurePixels(complete, complete.Layers[0].ID); Assert.True(BrushEdits.Paint(complete, complete.Layers[0].ID, Stroke, settings)); }
         Assert.Equal(Pixels(complete, mask), Pixels(incremental, mask)); Assert.Equal(1, history.UndoCount);
-        var undo = history.Undo()!.Value.Document!.Layers[0]; Assert.Same(original, undo.Asset); Assert.Same(originalMask, undo.Mask);
+        var undo = history.Undo()!.Value.Document!.Layers[0]; Assert.Same(original, undo.Asset);
+        Assert.Same(originalMask?.Asset, undo.Mask?.Asset); Assert.Equal(originalMask?.Placement, undo.Mask?.Placement);
+        Assert.Equal(originalMask?.IsEnabled, undo.Mask?.IsEnabled); Assert.Equal(originalMask?.IsLinked, undo.Mask?.IsLinked);
+        if (originalMask is not null) Assert.NotSame(originalMask, undo.Mask);
         Assert.Equal(Pixels(incremental, mask), Pixels(history.Redo()!.Value.Document!, mask));
         Assert.False(prepared.TryCommit(incremental, layer.ID, settings, mask));
     }

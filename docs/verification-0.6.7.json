@@ -1,0 +1,117 @@
+{
+  "version": "0.6.7",
+  "platform": "Windows x64",
+  "core_tests_passed": 1032,
+  "checks": [
+    {
+      "name": "ui",
+      "exit_code": 0,
+      "report_lines": 4043,
+      "pass_lines": 4043
+    },
+    {
+      "name": "dialogs",
+      "exit_code": 0,
+      "report_lines": 105,
+      "pass_lines": 105
+    },
+    {
+      "name": "windows-en",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "windows-zh",
+      "exit_code": 0,
+      "report_lines": 41,
+      "pass_lines": 0
+    },
+    {
+      "name": "lifecycle",
+      "exit_code": 0,
+      "report_lines": 26,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-en",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "clicks-zh",
+      "exit_code": 0,
+      "report_lines": 46,
+      "pass_lines": 0
+    },
+    {
+      "name": "shortcuts",
+      "exit_code": 0,
+      "report_lines": 117,
+      "pass_lines": 0
+    },
+    {
+      "name": "camera-raw",
+      "exit_code": 0,
+      "report_lines": 14,
+      "pass_lines": 0
+    },
+    {
+      "name": "performance",
+      "exit_code": 0,
+      "report_lines": 23,
+      "pass_lines": 13
+    },
+    {
+      "name": "native-icons",
+      "exit_code": 0,
+      "report_lines": 21,
+      "pass_lines": 21
+    },
+    {
+      "name": "brush-performance",
+      "exit_code": 0,
+      "report_lines": 19,
+      "pass_lines": 0
+    },
+    {
+      "name": "stroke-tools-performance",
+      "exit_code": 0,
+      "report_lines": 8,
+      "pass_lines": 4
+    },
+    {
+      "name": "materials",
+      "exit_code": 0,
+      "report_lines": 71,
+      "pass_lines": 71
+    },
+    {
+      "name": "editing-controls",
+      "exit_code": 0,
+      "report_lines": 102,
+      "pass_lines": 102
+    },
+    {
+      "name": "workspace-tools",
+      "exit_code": 0,
+      "report_lines": 1025,
+      "pass_lines": 1025
+    }
+  ],
+  "exe_sha256": "0ade0a85fcb4f598fa99c744ca57b05c03dc1263dcfbabd309f24088be72339b",
+  "installer_sha256": "24a4356bf410cd675d26e79e3fb970f64d994b4bb3562d791b0a5579a5f96f41",
+  "installer_first_upgrade_uninstall": "passed",
+  "settings_preserved": true,
+  "destination_selectable": true,
+  "project_format_changed": false,
+  "new_runtime_dependencies": false,
+  "trimmed_build_shipped": false,
+  "native_startup_trials_passed": 3,
+  "export_stress_cycles": 12,
+  "cloud_conclusion": "pending",
+  "mac_physical_comparison": "not verified",
+  "physical_dpi_matrix": "not verified",
+  "long_term_stability": "not verified"
+}

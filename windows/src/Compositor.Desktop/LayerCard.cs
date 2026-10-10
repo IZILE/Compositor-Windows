@@ -30,6 +30,7 @@ internal sealed class LayerCard : Grid
     internal Button PixelsButton { get; }
     internal Button MaskButton { get; }
     internal Button LinkButton { get; }
+    internal TextBlock NameLabel => _name;
     internal int RasterBuilds => _pixels.RasterBuilds + _mask.RasterBuilds;
     internal string Details => _details.Text ?? "";
     internal Size PixelPictureSize => _pixels.PictureSize;

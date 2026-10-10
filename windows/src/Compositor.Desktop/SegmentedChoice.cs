@@ -11,28 +11,36 @@ internal sealed class SegmentedChoice : Border
     private readonly Button[] _buttons;
     private readonly SelectionIndicator _selection;
     private int _selected;
+    private bool _animateSelection;
     internal event Action<int>? Changed;
     internal SegmentedChoice(params string[] choices)
     {
         ArgumentOutOfRangeException.ThrowIfZero(choices.Length);
+        VerticalAlignment = VerticalAlignment.Center;
+        HorizontalAlignment = HorizontalAlignment.Left;
         CornerRadius = new CornerRadius(12);
         Background = new SolidColorBrush(Color.FromRgb(53, 53, 53));
         BorderBrush = new SolidColorBrush(Colors.White, 0.08); BorderThickness = new Thickness(0.5);
         _selection = new SelectionIndicator { Height = 22, HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center, CornerRadius = new CornerRadius(11),
             Background = new SolidColorBrush(Color.FromRgb(41, 121, 245)) };
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 0 };
+        // Let the actual templates measure their text and previews. Sharing the columns makes
+        // segments equal without estimating font widths or forgetting template borders.
+        var row = new Grid();
+        Grid.SetIsSharedSizeScope(row, true);
         _buttons = choices.Select((name, index) =>
         {
             var button = new Button { Classes = { "plain", "selection-item" }, Padding = new Thickness(8, 0),
                 MinHeight = 24, Height = 24, CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
                 Content = new TextBlock { [!TextBlock.TextProperty] = UiText.Bind(name) } };
             button.Click += (_, _) => { if (_selected == index) return; SelectedIndex = index; Changed?.Invoke(index); };
-            row.Children.Add(button); return button;
+            row.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "choice" });
+            Grid.SetColumn(button, index); row.Children.Add(button); return button;
         }).ToArray();
         Child = new Grid { Children = { _selection, row } };
         row.SizeChanged += (_, _) => PlaceSelection();
         foreach (var button in _buttons) button.SizeChanged += (_, _) => PlaceSelection();
+        DetachedFromVisualTree += (_, _) => _animateSelection = false;
         SelectedIndex = 0;
     }
     internal int SelectedIndex
@@ -40,7 +48,11 @@ internal sealed class SegmentedChoice : Border
         get => _selected;
         set
         {
-            _selected = Math.Clamp(value, 0, _buttons.Length - 1);
+            var index = Math.Clamp(value, 0, _buttons.Length - 1);
+            // Initial shared-column layout can take more than one pass. Place that initial
+            // selection directly; animate once an already laid-out choice actually changes.
+            if (_selected != index && _buttons[_selected].Bounds.Width > 0) _animateSelection = true;
+            _selected = index;
             PlaceSelection();
         }
     }
@@ -51,6 +63,6 @@ internal sealed class SegmentedChoice : Border
     private void PlaceSelection()
     {
         if (_buttons[_selected].Bounds.Width <= 0) return;
-        _selection.MoveTo(new Rect(_buttons[_selected].Bounds.X, 0, _buttons[_selected].Bounds.Width, 22));
+        _selection.MoveTo(new Rect(_buttons[_selected].Bounds.X, 0, _buttons[_selected].Bounds.Width, 22), _animateSelection);
     }
 }

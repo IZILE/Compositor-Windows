@@ -27,6 +27,7 @@ public sealed partial class MainWindow
         _optionsBar.TextCancelled += () => { CancelText(); _canvas.Focus(); };
         _optionsBar.TextColorAsked += OpenTextColor;
         _optionsBar.TextCanvasFocused += () => _canvas.Focus();
+        _optionsBar.FontImportAsked += ImportFonts;
         Deactivated += (_, _) => ShowSelectionModifiers(KeyModifiers.None);
         _canvas.SelectionModeDisplayed = mode => _optionsBar.ShowSelection(mode, _document?.Selection.Path is not null);
     }

@@ -29,7 +29,7 @@ internal sealed partial class ToolOptionsBar : Border
         VerticalAlignment = VerticalAlignment.Center,
         FontWeight = FontWeight.SemiBold,
         FontSize = 13,
-        Margin = new Thickness(0, 0, 12, 0),
+        Margin = new Thickness(0, 0, 8, 0),
     };
     private readonly TextBlock _zoom = new() { VerticalAlignment = VerticalAlignment.Center };
     private readonly StackPanel _cells = new() { Orientation = Orientation.Horizontal, Spacing = 12 };
@@ -118,14 +118,9 @@ internal sealed partial class ToolOptionsBar : Border
             On("transform", tool == Tool.Move && hasDocument);
             On("type", tool == Tool.Type);
             On("zoom", tool is Tool.Pan or Tool.Zoom);
-            _title.Variants = tool switch
-            {
-                Tool.Brush => ["Brush", "Eraser"],
-                Tool.Marquee or Tool.Ellipse => ["Marquee", "Elliptical marquee"],
-                Tool.Lasso or Tool.Polygon => ["Lasso", "Polygonal lasso"],
-                Tool.Pan or Tool.Zoom => ["Pan", "Zoom"],
-                _ => [],
-            };
+            // Each tool uses its own natural caption width. Only Paint/Erase share a footprint because
+            // they switch the mode of the same brush controls without moving those controls mid-click.
+            _title.Variants = tool == Tool.Brush ? ["Brush", "Eraser"] : [];
             UiText.Set(_title, TextBlock.TextProperty, tool == Tool.Brush && _options.Erase ? "Eraser" : Names.TryGetValue(tool, out var name) ? name : "");
             // The marquee's shape and the lasso's kind *are* the tool in hand, so the bar follows the tool
             // rather than the other way round: picking one here asks for the tool the window already has.
@@ -189,7 +184,7 @@ internal sealed partial class ToolOptionsBar : Border
         var to = _options.GradientToBackground ? new SkiaSharp.SKColor((byte)(_options.GradientBackground.Red*255),(byte)(_options.GradientBackground.Green*255),(byte)(_options.GradientBackground.Blue*255)) : from.WithAlpha(0);
         var gradient = _options.GradientPreset ?? new GradientPreset("Foreground", [new(0,(uint)from),new(1,(uint)to)]);
         if (_options.GradientReversed) gradient=gradient.Reversed();
-        _gradientPreview.Show(gradient,62,20);
+        _gradientPreview.Show(gradient,80,26);
         _gradientTo.IsEnabled = _gradientFill.IsEnabled = _options.GradientPreset is null;
         ToolTip.SetTip(_gradients,UiText.Get("Gradient presets…")+": "+UiText.Get(gradient.Name));
         _gradientKind.SelectedIndex = (int)_options.Gradient;
@@ -251,8 +246,10 @@ internal sealed partial class ToolOptionsBar : Border
     private readonly MaterialPreview _brushPreview = new() { Width=62,Height=22 };
     private readonly Button _brushes = new() { Width=80,Height=26,Padding=new Thickness(5,1) };
     private readonly MaterialPreview _shapePreview = new() { Width=32,Height=18 };
-    private readonly MaterialPreview _gradientPreview = new() { Width=62,Height=20,CornerRadius=10 };
-    private readonly Button _gradients = new() { Width=80,Height=26,Padding=new Thickness(5,1) };
+    private readonly MaterialPreview _gradientPreview = new() { CornerRadius=13 };
+    private readonly Button _gradients = new() { Classes = { "material-swatch" }, Width=80,Height=26,
+        Padding=new Thickness(0), BorderThickness=new Thickness(0), CornerRadius=new CornerRadius(13),
+        HorizontalContentAlignment=HorizontalAlignment.Stretch, VerticalContentAlignment=VerticalAlignment.Stretch };
     private readonly SegmentedChoice _smearMode = new("Liquify", "Blur", "Smudge");
     private readonly ComboBox _maskPaint = new();
     private readonly SegmentedChoice _healMode = new("Content-Aware", "Create Texture", "Proximity Match");

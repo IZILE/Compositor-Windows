@@ -10,7 +10,7 @@ namespace Compositor.Core.Document;
 /// moving a layer into one. Each changes the document in place; the caller brackets it with the history so
 /// it becomes one undo step.
 /// </summary>
-public static class LayerPlacement
+public static partial class LayerPlacement
 {
     /// <summary>How many layers one document may hold, as the Mac build caps it.</summary>
     public const int MaxLayers = 10_000;

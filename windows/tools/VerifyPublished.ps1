@@ -11,7 +11,7 @@ $jobs = @(
     @('camera-raw','zh-CN','--camera-raw',$false), @('performance','en','--performance',$false),
     @('native-icons','en','--native-icons',$true), @('brush-performance','en','--brush-performance',$false),
     @('stroke-tools-performance','en','--stroke-tools-performance',$false), @('materials','zh-CN','--materials',$true),
-    @('editing-controls','en','--editing-controls',$true))
+    @('editing-controls','en','--editing-controls',$true), @('workspace-tools','en','--workspace-tools',$true))
 $previousData = $env:COMPOSITOR_DATA_DIR
 $previousFastCheck = $env:COMPOSITOR_MAC_QA_ONLY
 $results = @()

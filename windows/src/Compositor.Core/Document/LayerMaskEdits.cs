@@ -10,6 +10,23 @@ namespace Compositor.Core.Document;
 /// </summary>
 public static class LayerMaskEdits
 {
+    /// <summary>A mask copy keeps its document placement, replaces the target mask, and owns separate metadata.</summary>
+    public static bool CanCopy(CanvasDocument document, Guid source, Guid target) => source != target
+        && Lookup(document, source)?.Mask is not null && Lookup(document, target) is { IsGroup: false };
+
+    public static bool Copy(CanvasDocument document, Guid source, Guid target)
+    {
+        if (!CanCopy(document, source, target)) return false;
+        var from = Lookup(document, source)!; var to = Lookup(document, target)!; var mask = from.Mask!;
+        var replacing = to.Mask is { } old ? (long)old.Asset.Width * old.Asset.Height : 0;
+        if ((long)mask.Asset.Width * mask.Asset.Height > document.RemainingImagePixels + replacing) return false;
+        var copy = new Model.LayerMask(mask.Asset, mask.IsEnabled, from.MaskTransform, mask.IsLinked);
+        if (to.Mask is { } current && ReferenceEquals(current.Asset.Image, copy.Asset.Image)
+            && current.IsEnabled == copy.IsEnabled && current.IsLinked == copy.IsLinked && current.Placement == copy.Placement) return false;
+        to.Mask = copy;
+        return true;
+    }
+
     /// <summary>
     /// A plain all-white mask, which reveals everything, or an all-black one, which hides it. Refused when
     /// the layer already has a mask. A folder takes one too, which then clips everything inside it.

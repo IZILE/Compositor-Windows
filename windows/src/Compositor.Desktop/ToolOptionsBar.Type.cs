@@ -4,12 +4,14 @@ using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Compositor.Core.Format;
+using Compositor.Core.IO;
 
 namespace Compositor.Desktop;
 
 internal sealed partial class ToolOptionsBar
 {
     private readonly ComboBox _textFont = new() { Width = 210 };
+    private readonly Button _importFont = new() { [!ContentControl.ContentProperty] = UiText.Bind("Import Font…"), Focusable = false };
     private readonly InlineNumber _textSize = new("Size", 1, 2000, unit: "px", fieldWidth: 52, format: "0.##");
     private readonly Swatch _textColor = new();
     private readonly SegmentedChoice _textAlignment = new("Left", "Center", "Right");
@@ -30,6 +32,8 @@ internal sealed partial class ToolOptionsBar
     internal event Action? TextDone;
     internal event Action? TextCancelled;
     internal event Action? TextCanvasFocused;
+    internal event Action? FontImportAsked;
+    internal Button ImportFontButton => _importFont;
     internal InlineNumber TextSizeControl => _textSize;
     internal InlineNumber TextTrackingControl => _textTracking;
     internal InlineNumber TextLeadingControl => _textLeading;
@@ -71,21 +75,24 @@ internal sealed partial class ToolOptionsBar
             TextStyleFinished?.Invoke();
         };
         ToolTip.SetTip(_textFont, UiText.Get("Font"));
+        UiText.Set(_importFont, ToolTip.TipProperty, "TTF / OTF");
+        _importFont.Click += (_, _) => FontImportAsked?.Invoke();
         _textColor.Click += (_, _) => TextColorAsked?.Invoke();
         _textDone.Click += (_, _) => TextDone?.Invoke(); _textCancel.Click += (_, _) => TextCancelled?.Invoke();
         _textActions.Children.Add(_textCancel); _textActions.Children.Add(_textDone);
-        Cell("type", _textFont); Cell("type", _textSize); Cell("type", _textColor); Cell("type", _textAlignment);
+        Cell("type", _textFont); Cell("type", _importFont); Cell("type", _textSize); Cell("type", _textColor); Cell("type", _textAlignment);
         Cell("type", _textTracking); Cell("type", _textLeading); Cell("type", _editText);
     }
 
-    internal void LoadTextFonts()
+    internal void LoadTextFonts(bool reload = false)
     {
-        if (_fontsLoaded) return;
+        if (_fontsLoaded && !reload) return;
         var wasLoading = _loading; _loading = true;
         try
         {
             _fontsLoaded = true;
-            _textFont.ItemsSource = InstalledFonts.Value.Append(_shownText.FontName).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name).ToArray();
+            _textFont.ItemsSource = InstalledFonts.Value.Concat(FontLibrary.Current.Entries.Select(font => font.Name))
+                .Append(_shownText.FontName).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(name => name).ToArray();
             _textFont.SelectedItem = _shownText.FontName;
         }
         finally { _loading = wasLoading; }

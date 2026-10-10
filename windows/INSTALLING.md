@@ -1,74 +1,45 @@
-# Compositor Windows 0.6.6
+# Compositor Windows 0.6.7
 
-从 GitHub Releases 下载 `Compositor-Setup.exe`。默认安装到当前用户的 C 盘程序目录
-`%LOCALAPPDATA%\Programs\Compositor`，同时建立桌面和开始菜单快捷方式。
-安装向导中的“选择安装位置”页面可直接编辑路径，也可点“浏览”选择其他目录（包括其他盘符）。
-不需要单独安装 .NET。升级时运行新版安装包，会沿用上次选择的安装目录。
-需要自己选择目录时，请正常双击安装包；静默安装不会显示向导。
+从 [GitHub Releases](https://github.com/IZILE/Compositor-Windows/releases) 下载 `Compositor-Setup.exe`。
+双击安装包，在“选择安装位置”页面编辑路径或点“浏览”选择文件夹、盘符。
+默认位置为 C 盘当前用户的 `%LOCALAPPDATA%\Programs\Compositor`。升级沿用上次选择的位置，
+保留设置与导入的素材，并更新桌面和开始菜单快捷方式。静默安装不显示目录选择向导。
 
-界面在“帮助 → 语言”中切换简体中文和英文。保留 Windows 窗口按钮、Ctrl 快捷键、
-右键菜单和文件选择方式。应用内控件采用统一的深色、圆角和缓出过渡。
+界面语言可在“帮助 → 语言”切换。窗口按钮、Ctrl 快捷键、文件选择器及右键菜单保持 Windows 操作方式。
+设置与导入的素材保存在 `%LOCALAPPDATA%\Compositor-Windows\data`；工程保存在用户选择的位置。
+卸载保留这些设置、素材与工程。`.comp` 是工程文件夹：选择其中的 `manifest.json`，或把整个文件夹拖入窗口。
 
-设置继续保存在 `%LOCALAPPDATA%\Compositor-Windows\data`；工程保存在用户选择的位置。
-卸载程序不删除这些设置和工程。`.comp` 在 Windows 上是工程文件夹；打开时选择其中的
-`manifest.json`，或把整个工程文件夹拖入窗口。
+## 常用操作
 
-0.5.0 修复不透明度标签截断、数值居中及有符号小数的显示宽度，补充菜单、工具选中、
-滚动条、列表、蒙版目标、文件夹箭头和 Camera Raw 折叠过渡。快速切换时过渡从当前状态继续，
-弹窗关闭会取消尚未执行的打开反馈。滑块、滚动位置及画布输入即时跟随指针。
+- 画笔类工具的大小可拖动滑条、拖动标签或输入数值；笔刷与橡皮擦也支持 `[` / `]`。窄窗口会收起部分轨道，点数值旁按钮展开。
+- 点笔刷预览选择样式、导入 ABR/PNG。形状、渐变、图案与色板的预览按钮也可选择及导入素材。
+- 选区工具栏提供新建／添加／减去及扩展、收缩、羽化；Shift/Alt 可临时添加／减去一次选区。
+- 文字工具可选择字体、字号、颜色、对齐、字距及行距；行距 0 为自动。点“导入字体…”导入 TTF/OTF，无需安装到系统；导入后立即用于当前文字，重启后仍可选择。
+- 点“完成”或 Ctrl+Enter 保留文字编辑，点“取消”还原。数字框支持键盘输入、上下键和 Enter。
+- 拖动图层名称或行内空白可排序、移入文件夹；Ctrl+拖动复制图层或整个文件夹。Alt+拖动蒙版缩略图可复制蒙版，也可通过右键菜单复制／粘贴。
+- “文件 → 导出 PNG”可选择快速、均衡或最小体积三档无损压缩，保留透明度；JPEG 可拖动或输入质量，并比较原图与压缩后的实际画面。预览下方显示实际文件大小，JPEG 透明区域合成白色背景。
 
-蒙版新增从当前选区建立、Alt 点击单独查看、返回画面提示；修复灰度缩略图。
-画笔新增硬度内圈，图章显示已选择的来源标记。
+## 格式范围
 
-0.6.0 增加画布与图层缓存，减少平移、缩放、选区和光标反馈时的重复合成。
-左侧工具栏、项目标签、四组工具模式与 Camera Raw 引导校正／曲线通道共用连续移动的圆角选中背景，
-快速或反向点选时从当前位置继续过渡；中英切换后也会跟随文字宽度调整。
-滤镜预览在后台串行计算，只显示最新参数对应的结果；关闭面板后不会回填过期画面。
-测试工程的平移重绘从约 195 毫秒降到约 2.3 毫秒；这是固定工程的自动测量，不能代表所有设备的帧率。
-复杂图层修改、最终滤镜应用、大图导入和保存仍可能耗时，尚不能承诺所有操作达到 60 FPS。
+支持静态采样 ABR 1、2、6、7、9、10 的 8/16 位原始及 RLE 笔尖，现代 ABR 动态参数暂不恢复。
+PNG 使用透明度作为笔尖；不透明 PNG 使用深色区域。导入笔尖保留自身软边，图章、修复、模糊、液化和涂抹仍使用圆形工作范围。
+支持 SVG 填充轮廓、固定线性 RGB 的 GGR、PNG/JPEG/WebP 图案及 GPL 色板。
 
-0.6.1 修复一帧内移开又移回时可能露出旧目标的动画闪回，覆盖工具、标签、菜单、分段选择、
-按钮反馈与折叠。窗口改用十五尺寸 ICO，正确取得标题栏小图标；桌面图标主体放大且居中。
-升级后会通知 Windows 刷新图标与快捷方式。不同物理 DPI 和刷新率仍需实机验证。
+导入字体仅保存在本机素材库，尚未嵌入工程；换电脑后若要继续编辑同一字体，需要再次导入。
+工程中保存的文字图像仍能正常显示和导出。文字样式目前作用于整层，部分文字格式及复杂文字整形待完善。
+普通工程保持格式 11；扩展可编辑形状使用 Windows 格式 12，旧 Mac 版本可通过 PNG/PSD 交换。
 
-0.6.2 移除左侧工具、项目标签和分段选择上的第二层悬停／按下底板，只让选中背景连续移动。
-鼠标悬停和按下改为图标、文字明暗的平滑变化，避免两层底色叠加时突然变亮。普通操作按钮、
-关闭按钮的反馈及 Windows 操作逻辑保留。新增实际背景像素检查，覆盖选中与未选中状态。
+这是基于 [原作](https://github.com/robbietilton/Compositor) 和社区 C# 移植继续开发的独立版本。
+Mac 功能仍在补齐；物理 DPI、显卡、触控板与原生动画时序尚未完成全部实机对照。
+原作与图标的 MIT 许可见 LICENSE；依赖许可见 ThirdPartyLicenses。
 
-0.6.3 修复笔刷／橡皮擦标题及同组下拉选项推移控件、菜单经过空隙时背景反复淡入淡出。
-普通笔刷和橡皮擦在输入过程中累计笔触，松手时合并为一次可撤销的编辑；长笔画预览只绘制新增部分。
-形状预览复用已转换的图像，长套索轮廓使用连续路径。保留原有像素精度、笔刷间距、软边和选区约束。
-超大笔刷、复杂图层合成、滤镜最终应用及大图导入／保存仍可能耗时，不保证所有工程的固定帧率。
+## Installation
 
-0.6.4 为所有笔刷类工具增加大小滑条，同时保留数值输入。空间不足时，滑条收进数值旁的展开按钮；
-默认窗口会按可用宽度收起部分滑条，保留其数值框。工具栏按同组最大参数宽度安排，避免切换时跳动。
-形状使用直接可见的“矩形／椭圆／直线”按钮，圆角及线宽均可拖动或输入；修复相同边界下复用错误形状、颜色及直线方向的预览。
-液化与涂抹按附近区域索引笔触，保持原有像素结果与撤销；超大笔刷仍可能耗时。
+Run `Compositor-Setup.exe` and use Browse on the destination page to choose a folder or drive.
+The default is `%LOCALAPPDATA%\Programs\Compositor`. Upgrades reuse the previous location and retain
+settings, imported assets and projects. Settings and assets are stored in `%LOCALAPPDATA%\Compositor-Windows\data`.
+Use the desktop or Start menu shortcut to launch. Uninstall preserves user content.
 
-在画笔工具栏点“笔刷…”或“工具 → 笔刷设置 → 导入／选择笔刷…”，导入 `.abr` 或 PNG。
-支持 ABR 1、2、6、7、9、10 的静态采样笔尖，8／16 位原始或 RLE 数据；导入后转换为本软件的 8 位覆盖蒙版。
-现代 ABR 描述符中的笔刷名称、角度、间距、纹理、压力、散布及双重笔刷暂不恢复；现代 ABR 使用 25% 间距。
-带透明度的 PNG 使用透明度作为笔尖；完全不透明的 PNG 使用深色区域作为笔尖。导入笔尖保留自身柔边，硬度控件暂时禁用。
-可绘制、擦除或绘制蒙版；图章、修复、模糊、液化、涂抹保留原来的圆笔尖。笔刷库保存在设置目录内，升级保留。
-切回“硬边圆笔刷”或“柔边圆笔刷”恢复默认笔尖。绘制后的像素仍正常存入可编辑工程，不要求别的电脑也装有同一笔刷。
-
-选区工具栏：选择“新建／添加／减去”，或临时按住 Shift 添加、Alt 减去。
-“扩展／收缩／羽化”旁的数值为像素；点击对应按钮执行一次调整。没有选区时这些按钮不可用。
-魔棒容差可直接输入，取样大小可选择单点及不同范围的平均值。
-
-文字工具栏：选择系统字体，调整字号、颜色、对齐、字距及行距；行距 0 表示自动。
-在画布输入文字后可直接调整样式，点“完成”或 Ctrl+Enter 保留整次编辑，点“取消”恢复。
-数字框保留 Windows 输入、上下键调节和 Enter 提交；提交后可继续在画布输入。
-样式调整作用于整层文字，尚不支持选中部分文字的格式调整和字体悬停试穿。
-
-这是独立社区 Windows 移植版。并非 Mac 原生版本，也尚未完成所有 Mac 功能、像素和时序的实机对照。
-大图滤镜性能、多屏 DPI、触控板惯性、Apple Vision 主体选择等仍有差异。
-构建未签名。原作和图标的 MIT 许可见 LICENSE；依赖许可见 ThirdPartyLicenses。
-
-Install or upgrade with `Compositor-Setup.exe`. The default is the current user's
-`%LOCALAPPDATA%\Programs\Compositor` directory. Use Browse on the destination page to choose
-another folder or drive. Upgrades remember the previously selected location. Double-click the
-installer normally to see this page; silent installation does not display the wizard.
-Settings and editable projects survive uninstall.
-Use Help > Language to switch English and Simplified Chinese. This community port retains Windows
-window controls and shortcuts, with macOS-inspired in-app controls and transitions.
+The text toolbar imports app-local TTF/OTF fonts. To edit with that font on another computer, import it there as well.
+PNG export offers three lossless compression levels; JPEG export offers adjustable quality and a compressed preview.
+The displayed byte count belongs to the exported file. JPEG composites transparency onto white.

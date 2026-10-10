@@ -69,12 +69,15 @@ internal static class ToolbarStabilityChecks
                         Check(!options.Erase && bar.TitleLabel.Text == UiText.Get("Brush"), "the actual Paint click restores mode and title");
                         if (!mask && width == 1180) Capture("toolbar-" + locale + "-paint");
                     }
-                    mask = false; Show(Tool.Marquee); Layout();
-                    Stable("Rectangle to Ellipse", bar.CellsFor("marqueeShape"), () => Show(Tool.Ellipse));
-                    Show(Tool.Lasso); Layout();
-                    Stable("Freehand to Polygonal", bar.CellsFor("lasso"), () => Show(Tool.Polygon));
-                    Show(Tool.Pan); bar.ShowZoom(100); Layout();
-                    Stable("Pan to Zoom", bar.CellsFor("zoom"), () => Show(Tool.Zoom));
+                    mask = false;
+                    // Different tools can use their natural title width. Only changes within one tool's
+                    // settings need a fixed footprint; a long tool name must not pad every other header.
+                    foreach (var tool in new[] { Tool.Marquee, Tool.Ellipse, Tool.Lasso, Tool.Polygon, Tool.Pan, Tool.Zoom })
+                    {
+                        Show(tool); Layout();
+                        Check(UiLayoutAudit.CheckText(bar, tool.ToString()) > 0,
+                            $"{locale}/{width} {tool}: natural tool layout keeps captions and numbers fully visible");
+                    }
                     Show(Tool.Liquify); Layout();
                     Stable("Liquify to Blur", bar.CellsFor("smear").Concat(bar.CellsFor("brush")), () => Show(Tool.Blur));
                     Stable("Blur to Smudge", bar.CellsFor("smear").Concat(bar.CellsFor("brush")), () => Show(Tool.Smudge));

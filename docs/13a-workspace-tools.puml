@@ -1,0 +1,17 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 13A：工具、素材与导出
+rectangle "已完成\n渐变圆角与控件对齐\n笔尖实际轮廓、精简素材说明" as display #DDF2DF
+rectangle "已完成\n字体导入与持久保存\nPNG/JPEG 压缩、实际结果预览" as assets #DDF2DF
+rectangle "已完成\n图层拖动、整组复制、蒙版复制\n一次撤销，取消安全恢复" as layers #DDF2DF
+rectangle "已完成\n1032 核心测试、923 新增交互断言\n12 轮导出快速切换与关闭检查" as tests #DDF2DF
+rectangle "当前\n最终 EXE 的功能、显示、稳定性与性能回归\n原生启动、安装与升级验证" as current #FFF0BB
+rectangle "待完成\n覆盖安装、公开 0.6.7、独立云端验证\nMac 实机、物理 DPI 与剩余功能" as pending #E7E9ED
+display --> assets
+assets --> layers
+layers --> tests
+tests --> current
+current --> pending
+@enduml

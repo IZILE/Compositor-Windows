@@ -10,26 +10,26 @@ Windows 版本提供中英文界面，保留 Windows 窗口按钮、文件操作
 
 **[下载最新版安装包](https://github.com/IZILE/Compositor-Windows/releases/latest/download/Compositor-Setup.exe)** · [所有版本](https://github.com/IZILE/Compositor-Windows/releases) · [问题反馈](https://github.com/IZILE/Compositor-Windows/issues)
 
-适用于 Windows 10/11 x64，无需另外安装 .NET。安装向导可选择目录，默认位于 C 盘当前用户程序目录；升级沿用原位置，保留设置。安装后使用桌面或开始菜单快捷方式启动。
-
-在 **帮助 → 语言** 中切换中文或 English。笔刷大小可拖动滑条、输入数值，或使用 `[` / `]` 调节。更多操作见[安装与使用说明](windows/INSTALLING.md)。
+适用于 Windows 10/11 x64。安装向导可选择目录，默认位于 C 盘当前用户程序目录；升级沿用原位置，保留设置。安装后使用桌面或开始菜单快捷方式启动。
 
 ## 主要功能
 
-- 图层、分组、混合模式、蒙版、选区、文字与变换。
+- 图层、分组、混合模式、蒙版、选区、文字与变换；支持图层拖动排序、整组复制与蒙版复制。
 - 顶部直接调整选区模式、扩展／收缩／羽化，以及文字字体、大小、颜色、对齐、字距和行距。
 - 绘画、擦除、图章、修复、模糊、涂抹、液化、渐变和常用照片滤镜。
 - 14 种笔刷、18 种可编辑形状、12 组渐变、10 种图案、36 个色板颜色。
-- 支持 ABR/PNG 笔刷、SVG 形状、GGR 渐变、图片图案和 GPL 色板导入；素材选择可即时预览，取消可还原。
-- `.comp` 工程保存，以及 PSD/PSB 导入和 PNG/PSD 导出。
+- 支持 ABR/PNG 笔刷、SVG 形状、GGR 渐变、图片图案、GPL 色板及 TTF/OTF 字体导入。
+- `.comp` 工程保存、PSD/PSB 导入、PNG/JPEG/PSD 导出；PNG 无损压缩、JPEG 质量调节与文件大小预览。
 
 ## 界面预览
 
-以下画面来自 **0.6.6 当前应用界面的自动渲染**，随版本更新。
+以下画面来自 **0.6.7 当前应用界面的自动渲染**，随版本更新。
 
 ![Compositor Windows 中文编辑界面](docs/previews/editor.png)
 
-![文字编辑与样式工具栏](docs/previews/type.png)
+![文字与字体导入工具栏](docs/previews/type.png)
+
+![JPEG 压缩导出](docs/previews/export.png)
 
 ![形状选择与实时预览](docs/previews/materials.gif)
 

@@ -84,7 +84,8 @@ public sealed class ImageLayer : IDisposable
             Opacity = Opacity,
             BlendMode = BlendMode,
             MaskSourceID = maskSourceID,
-            Mask = Mask,
+            // Mask metadata is mutable; snapshots and duplicates share only the immutable pixels.
+            Mask = Mask is { } mask ? new LayerMask(mask.Asset, mask.IsEnabled, mask.Placement, mask.IsLinked) : null,
             Adjustment = Adjustment,
             Shape = Shape,
             Effects = Effects,

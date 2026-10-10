@@ -173,10 +173,15 @@ public sealed partial class MainWindow
         menu.Items.Add(add);
         if (layer?.Mask is not null)
         {
+            menu.Items.Add(Command("Copy Mask", () => { if (_document is { } current) _copiedMask = (current, layer.ID); }));
             menu.Items.Add(Command(layer.Mask.IsEnabled ? "Disable Mask" : "Enable Mask", ToggleMask));
             menu.Items.Add(Command("Delete Mask", DeleteMask));
             menu.Items.Add(Command(layer.Mask.IsLinked ? "Unlink Mask" : "Link Mask", ToggleMaskLink));
         }
+        var paste = Command("Paste Mask", () => { if (_copiedMask is { } copied && Selected is { } target) CopyLayerMask(copied.ID, target); });
+        paste.IsEnabled = _copiedMask is { } saved && ReferenceEquals(saved.Document, _document)
+            && layer is not null && LayerMaskEdits.CanCopy(saved.Document, saved.ID, layer.ID);
+        menu.Items.Add(paste);
         menu.Items.Add(new Separator());
         menu.Items.Add(Command(layer?.IsVisible == false ? "Show Layer" : "Hide Layer", () => { if (Selected is { } id) ToggleLayerVisibility(id); }));
         return menu;
