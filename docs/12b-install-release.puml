@@ -1,0 +1,17 @@
+@startuml
+skinparam defaultFontName Microsoft YaHei
+skinparam shadowing false
+skinparam backgroundColor #FAFAFA
+title 阶段 12B：0.6.6 交付
+rectangle "已完成\n选区与文字工具栏\n实时调整、取消、撤销与重做" as feature #DDF2DF
+rectangle "已完成\n本机 1011 项核心测试\n15 组最终程序检查与安装验证" as local #DDF2DF
+rectangle "已完成\n覆盖安装，保留设置与快捷方式\nGitHub 公开源码、安装包与预览" as release #DDF2DF
+rectangle "已完成\n独立 Windows 云端 1011 项测试\n15 组程序检查，发布文件保持不变" as cloud #DDF2DF
+rectangle "下一阶段\n继续补齐图层与蒙版操作\n持续检查布局、动画与操作延迟" as current #FFF0BB
+rectangle "仍待完成\n部分字符格式、字体悬停预览、AI\nMac 实机、物理 DPI 与大图验证" as pending #E7E9ED
+feature --> local
+local --> release
+release --> cloud
+cloud --> current
+current --> pending
+@enduml
